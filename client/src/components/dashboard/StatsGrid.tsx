@@ -16,66 +16,29 @@ interface StatsGridProps {
     pending: number
     verified: number
     resolved: number
-    weeklyTrend: number
+    weeklyTrend?: number
   }
 }
 
 const statCards = [
-  {
-    key: 'totalReports',
-    icon: FileText,
-    color: 'bg-blue-50 text-blue-600',
-    trendKey: 'dashboard.stats.totalReports',
-  },
-  {
-    key: 'pending',
-    icon: Clock,
-    color: 'bg-amber-50 text-amber-600',
-    trendKey: 'dashboard.stats.pending',
-  },
-  {
-    key: 'verified',
-    icon: AlertTriangle,
-    color: 'bg-purple-50 text-purple-600',
-    trendKey: 'dashboard.stats.verified',
-  },
-  {
-    key: 'resolved',
-    icon: CheckCircle2,
-    color: 'bg-emerald-50 text-emerald-600',
-    trendKey: 'dashboard.stats.resolved',
-  },
+  { key: 'totalReports', icon: FileText, color: 'bg-blue-50 text-blue-600', trendKey: 'dashboard.totalReports' },
+  { key: 'pending', icon: Clock, color: 'bg-amber-50 text-amber-600', trendKey: 'dashboard.pending' },
+  { key: 'verified', icon: AlertTriangle, color: 'bg-purple-50 text-purple-600', trendKey: 'dashboard.verified' },
+  { key: 'resolved', icon: CheckCircle2, color: 'bg-emerald-50 text-emerald-600', trendKey: 'dashboard.resolved' },
 ]
 
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-}
-
-const item = {
-  hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0 },
-}
+const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } }
+const item = { hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }
 
 export function StatsGrid({ stats }: StatsGridProps) {
   const { t } = useTranslation()
+  const trend = stats.weeklyTrend ?? 0
 
   return (
-    <motion.div
-      variants={container}
-      initial="hidden"
-      animate="show"
-      className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-    >
+    <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {statCards.map((card) => {
         const value = stats[card.key as keyof typeof stats]
-        const isPositive = stats.weeklyTrend >= 0
-
+        const isPositive = trend >= 0
         return (
           <motion.div key={card.key} variants={item}>
             <Card className="hover:shadow-md transition-shadow">
@@ -84,24 +47,16 @@ export function StatsGrid({ stats }: StatsGridProps) {
                   <div className={`flex h-12 w-12 items-center justify-center rounded-full ${card.color}`}>
                     <card.icon className="h-6 w-6" />
                   </div>
-                  <div className="flex items-center gap-1 text-sm">
-                    {isPositive ? (
-                      <TrendingUp className="h-4 w-4 text-emerald-500" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4 text-red-500" />
-                    )}
-                    <span
-                      className={isPositive ? 'text-emerald-600' : 'text-red-600'}
-                    >
-                      {Math.abs(stats.weeklyTrend)}%
-                    </span>
-                  </div>
+                  {trend !== 0 && (
+                    <div className="flex items-center gap-1 text-sm">
+                      {isPositive ? <TrendingUp className="h-4 w-4 text-emerald-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
+                      <span className={isPositive ? 'text-emerald-600' : 'text-red-600'}>{Math.abs(trend)}%</span>
+                    </div>
+                  )}
                 </div>
                 <div className="mt-4">
                   <p className="text-3xl font-bold text-slate-900">{value}</p>
-                  <p className="text-sm text-slate-500 mt-1">
-                    {t(card.trendKey)}
-                  </p>
+                  <p className="text-sm text-slate-500 mt-1">{t(card.trendKey)}</p>
                 </div>
               </CardContent>
             </Card>

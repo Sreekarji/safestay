@@ -17,40 +17,55 @@ api.interceptors.response.use((response: any) => response, (error: any) => {
     localStorage.removeItem('user');
     window.location.href = '/login';
   }
-  const message = error.response?.data?.message || error.message || 'Something went wrong';
+  const message = error.response?.data?.error || error.response?.data?.message || error.message || 'Something went wrong';
   return Promise.reject(new Error(message));
 });
 
 export default api;
 
+// Helper: unwrap backend { success, data } responses
+function unwrap(res: any) {
+  const body = res.data;
+  if (body && body.success !== undefined && body.data !== undefined) return body.data;
+  return body;
+}
+
 // Map fetch function
 export async function fetchMapMarkersWithHistory() {
-  const { data } = await api.get('/map/markers/history');
-  return data.markers ?? data;
+  const data = await unwrap(await api.get('/accommodations/with-location'));
+  return Array.isArray(data) ? data : [];
 }
 
 // Dashboard fetch functions
 export async function fetchDashboardStats() {
-  const { data } = await api.get('/analytics/dashboard');
-  return data;
+  return await unwrap(await api.get('/admin/stats'));
 }
 
 export async function fetchSSITrend() {
-  const { data } = await api.get('/analytics/ssi-trend');
-  return data.trend ?? data;
+  try {
+    return await unwrap(await api.get('/analytics/dashboard'));
+  } catch {
+    return { trend: [] };
+  }
 }
 
 export async function fetchAreaRisks() {
-  const { data } = await api.get('/analytics/area-risk');
-  return data.areas ?? data;
+  try {
+    return await unwrap(await api.get('/analytics/area-risk'));
+  } catch {
+    return [];
+  }
 }
 
 export async function fetchCategoryBreakdown() {
-  const { data } = await api.get('/analytics/categories');
-  return data.categories ?? data;
+  try {
+    return await unwrap(await api.get('/analytics/dashboard'));
+  } catch {
+    return { categoryBreakdown: [] };
+  }
 }
 
 export async function fetchRecentReports() {
-  const { data } = await api.get('/reports?limit=10&sort=-createdAt');
-  return data.reports ?? data;
+  const data = await unwrap(await api.get('/reports?limit=10'));
+  return data?.reports || data || [];
 }

@@ -91,11 +91,13 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // ========================
 const startServer = async () => {
   try {
-    // Connect to MongoDB
-    await connectDB();
-
-    // Configure Cloudinary
-    configureCloudinary();
+    // Connect to MongoDB (skip in DEMO_MODE if unavailable)
+    if (process.env.DEMO_MODE !== 'true') {
+      await connectDB();
+      configureCloudinary();
+    } else {
+      console.log('⚠️  DEMO MODE: Skipping MongoDB connection');
+    }
 
     // Start listening
     app.listen(PORT, () => {

@@ -5,14 +5,13 @@ import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useAuthStore } from '@/stores/authStore';
-import type { RegisterFormData } from '@/lib/validations';
 
 export function Register() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { register: registerUser, error, clearError } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
-  const handleSubmit = async (data: RegisterFormData) => {
+  const handleSubmit = async (data: any) => {
     try { setLocalError(null); clearError(); await registerUser(data); navigate('/verify-otp'); }
     catch (err: any) { setLocalError(err.message || 'Registration failed'); }
   };

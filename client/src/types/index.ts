@@ -1,45 +1,64 @@
 export interface User {
-  id: string;
+  _id: string;
   name: string;
   email: string;
-  phone: string;
+  phone?: string;
   role: 'student' | 'owner' | 'admin';
-  avatar?: string;
-  createdAt: string;
+  college?: string;
+  studentId?: string;
+  isVerified?: boolean;
+  isBanned?: boolean;
+  profilePhoto?: string;
+  ownerVerification?: {
+    status: 'none' | 'pending' | 'under_review' | 'verified' | 'rejected';
+    rejectionReason?: string;
+    verifiedAt?: string;
+  };
+  createdAt?: string;
 }
 
 export interface Report {
-  id: string;
+  _id: string;
   title: string;
   description: string;
   category: ReportCategory;
-  severity: Severity;
+  severity: number; // 1-10 numeric
   status: ReportStatus;
-  location: string;
-  accommodation: Accommodation;
+  accommodationId: Accommodation | string;
+  userId: User | string;
   images: string[];
-  aiVerdict: AIVerdict[];
-  ssiImpact: SSIImpact;
-  reporter: User;
+  aiVerification?: {
+    mistral?: AIVerdictResult;
+    groq?: AIVerdictResult;
+    gemini?: AIVerdictResult;
+    consensus?: 'accept' | 'reject' | 'pending';
+    overallConfidence?: number;
+    verifiedAt?: string;
+  };
+  ownerResponse?: {
+    message: string;
+    proofImages: string[];
+    respondedAt: string;
+  };
+  studentVerification?: {
+    verified: boolean;
+    comment?: string;
+    verifiedAt: string;
+  };
+  counterReport?: {
+    reason: string;
+    description: string;
+    evidence: string[];
+    status: 'pending' | 'accepted' | 'rejected';
+  };
+  upvotes: number;
+  upvotedBy: string[];
+  isAnonymous: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-export type ReportCategory = 'harassment' | 'theft' | 'unsafe_area' | 'infrastructure' | 'health_hazard' | 'other';
-export type Severity = 'low' | 'medium' | 'high' | 'critical';
-export type ReportStatus = 'pending' | 'verified' | 'resolved' | 'rejected';
-
-export interface Accommodation {
-  id: string;
-  name: string;
-  area: string;
-  address: string;
-  ssi: number;
-  totalReports: number;
-  verifiedReports: number;
-  coordinates: { lat: number; lng: number };
-}
-
+// Component-facing AI verdict (used by AIVerdict.tsx)
 export interface AIVerdict {
   model: string;
   verdict: 'authentic' | 'suspicious' | 'fake';
@@ -48,9 +67,44 @@ export interface AIVerdict {
   audioUrl?: string;
 }
 
-export interface SSIImpact {
-  before: number;
-  after: number;
+// Backend AI verification result
+export interface AIVerdictResult {
+  verdict: 'accept' | 'reject' | 'uncertain';
+  confidence: number; // 0-1
+  reasoning: string;
+}
+
+export type ReportCategory = 'fire_safety' | 'water_quality' | 'structural' | 'electrical' | 'hygiene' | 'security' | 'food_safety' | 'other';
+export type ReportStatus = 'pending' | 'ai_verified' | 'approved' | 'resolved' | 'verified' | 'disputed' | 'rejected';
+
+export interface Accommodation {
+  _id: string;
+  name: string;
+  type?: string;
+  address: string;
+  area: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  ssi: number;
+  ssiHistory?: { score: number; date: string; reportCount: number }[];
+  categoryScores?: Record<string, number>;
+  reportCount: number;
+  verifiedReportCount?: number;
+  amenities?: string[];
+  capacity?: number;
+  currentOccupancy?: number;
+  monthlyRent?: number;
+  contactPhone?: string;
+  contactEmail?: string;
+  images?: string[];
+  ownerId?: string;
+  isActive?: boolean;
+  location?: {
+    type: 'Point';
+    coordinates: [number, number]; // [lng, lat]
+  };
+  riskLevel?: string;
 }
 
 export interface MapMarker {
@@ -61,6 +115,7 @@ export interface MapMarker {
   ssi: number;
   reportCount: number;
   accommodation: string;
+  riskLevel?: string;
 }
 
 export interface DashboardStats {
@@ -68,7 +123,7 @@ export interface DashboardStats {
   pending: number;
   verified: number;
   resolved: number;
-  weeklyTrend: number;
+  weeklyTrend?: number;
 }
 
 export interface Language {
@@ -87,9 +142,10 @@ export interface RegisterData {
   email: string;
   phone: string;
   password: string;
-  confirmPassword: string;
-  role: 'student' | 'owner';
-  terms: boolean;
+  confirmPassword?: string;
+  role?: 'student' | 'owner';
+  college?: string;
+  studentId?: string;
 }
 
 export interface OTPData {
@@ -101,7 +157,7 @@ export interface QueryParams {
   page?: number;
   limit?: number;
   category?: ReportCategory;
-  severity?: Severity;
+  severity?: number;
   status?: ReportStatus;
   search?: string;
 }
@@ -122,39 +178,61 @@ export interface MapMarkerWithHistory extends MapMarker {
 export interface RouteLocation {
   id: string;
   name: string;
-  lat: number;
-  lng: number;
-  type: 'accommodation' | 'college';
+  lat?: number;
+  lng?: number;
+  latitude: number;
+  longitude: number;
+  area: string;
+  type?: 'accommodation' | 'college';
 }
 
 export interface RoutePoint {
   lat: number;
   lng: number;
-  ssi: number;
+  ssi?: number;
+  safetyScore?: number;
 }
 
 export interface RiskHotspot {
-  lat: number;
-  lng: number;
+  id?: string;
+  lat?: number;
+  lng?: number;
+  latitude?: number;
+  longitude?: number;
   severity: number;
-  description: string;
+  description?: string;
+  label?: string;
+  type?: string;
+  reportCount?: number;
+  lastReported?: string;
 }
 
 export interface RouteIntelligence {
-  id: string;
-  name: string;
-  points: RoutePoint[];
-  score: number;
-  distance: number;
-  duration: number;
-  nightSafety: number;
+  id?: string;
+  routeId?: string;
+  name?: string;
+  points?: RoutePoint[];
+  score?: number;
+  distance: string;
+  duration?: number;
+  nightSafety?: number;
   hotspots: RiskHotspot[];
+  accommodationName: string;
+  collegeName: string;
+  safetyScore: number;
+  riskLevel: string;
+  travelTime: string;
+  nightSafetyRating: number;
+  recommendation?: string;
+  aiSummary?: string;
+  routePoints: RoutePoint[];
 }
 
 export interface RouteComparison {
   routeA: RouteIntelligence;
   routeB: RouteIntelligence;
-  recommendation: string;
+  recommendation?: string;
+  aiRecommendation: string;
 }
 
 export interface AISummary {

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
@@ -11,16 +11,11 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn, getSeverityColor } from '@/lib/utils';
+import { accommodationService } from '@/services/accommodationService';
 
 const STEPS = 4;
-const accommodations = [
-  { id: '1', name: 'Gachibowli Hostel', area: 'Gachibowli' },
-  { id: '2', name: 'Madhapur PG', area: 'Madhapur' },
-  { id: '3', name: 'Kondapur Residences', area: 'Kondapur' },
-  { id: '4', name: 'Hitech City Lodge', area: 'Hitech City' },
-  { id: '5', name: 'Banjara Heights', area: 'Banjara Hills' },
-];
 
+interface AccommodationOption { _id: string; name: string; area: string; type?: string; ssi?: number; }
 interface Props { onSubmit: (data: ReportFormData, images: File[]) => Promise<void>; loading?: boolean; }
 
 export function ReportForm({ onSubmit, loading }: Props) {
@@ -28,12 +23,19 @@ export function ReportForm({ onSubmit, loading }: Props) {
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [accommodations, setAccommodations] = useState<AccommodationOption[]>([]);
   const { register, handleSubmit, watch, setValue, trigger, formState: { errors } } = useForm<ReportFormData>({
-    resolver: zodResolver(reportSchema), defaultValues: { severity: 'medium' },
+    resolver: zodResolver(reportSchema), defaultValues: { severity: 'medium' as any },
   });
   const selectedSeverity = watch('severity');
   const selectedCategory = watch('category');
   const description = watch('description') || '';
+
+  useEffect(() => {
+    accommodationService.getDropdown()
+      .then((data) => { if (Array.isArray(data)) setAccommodations(data); })
+      .catch(() => {});
+  }, []);
 
   const onDrop = useCallback((accepted: File[]) => {
     const newImgs = [...images, ...accepted].slice(0, 5);
@@ -53,12 +55,14 @@ export function ReportForm({ onSubmit, loading }: Props) {
   const prevStep = () => { if (step > 1) setStep(step - 1); };
 
   const categories = [
-    { value: 'harassment', label: t('report.harassment') },
-    { value: 'theft', label: t('report.theft') },
-    { value: 'unsafe_area', label: t('report.unsafeArea') },
-    { value: 'infrastructure', label: t('report.infrastructure') },
-    { value: 'health_hazard', label: t('report.healthHazard') },
-    { value: 'other', label: t('report.other') },
+    { value: 'fire_safety', label: 'Fire Safety' },
+    { value: 'water_quality', label: 'Water Quality' },
+    { value: 'structural', label: 'Structural' },
+    { value: 'electrical', label: 'Electrical' },
+    { value: 'hygiene', label: 'Hygiene' },
+    { value: 'security', label: 'Security' },
+    { value: 'food_safety', label: 'Food Safety' },
+    { value: 'other', label: 'Other' },
   ];
   const severities = [
     { value: 'low', label: t('report.low'), desc: t('report.lowDesc'), color: 'border-emerald-300 bg-emerald-50' },
@@ -86,7 +90,7 @@ export function ReportForm({ onSubmit, loading }: Props) {
             <motion.div key="s1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">{t('report.title')}</label><Input placeholder={t('report.titlePlaceholder')} {...register('title')} />{errors.title && <p className="mt-1 text-xs text-red-500">{errors.title.message}</p>}</div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">{t('report.category')}</label>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">{categories.map((c) => (
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">{categories.map((c) => (
                   <button key={c.value} type="button" onClick={() => setValue('category', c.value as any)}
                     className={cn("rounded-lg border-2 px-3 py-2 text-sm font-medium transition-all", selectedCategory === c.value ? "border-primary-600 bg-primary-50 text-primary-700" : "border-slate-200 text-slate-600 hover:border-slate-300")}>{c.label}</button>
                 ))}</div>{errors.category && <p className="mt-1 text-xs text-red-500">{errors.category.message}</p>}</div>
@@ -109,7 +113,7 @@ export function ReportForm({ onSubmit, loading }: Props) {
                 {errors.location && <p className="mt-1 text-xs text-red-500">{errors.location.message}</p>}</div>
               <div><label className="block text-sm font-medium text-slate-700 mb-1.5">{t('report.accommodation')}</label>
                 <select {...register('accommodationId')} className="w-full appearance-none rounded-lg border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500">
-                  <option value="">{t('report.selectAccommodation')}</option>{accommodations.map((a) => <option key={a.id} value={a.id}>{a.name} - {a.area}</option>)}
+                  <option value="">{t('report.selectAccommodation')}</option>{accommodations.map((a) => <option key={a._id} value={a._id}>{a.name} - {a.area}</option>)}
                 </select>{errors.accommodationId && <p className="mt-1 text-xs text-red-500">{errors.accommodationId.message}</p>}</div>
             </motion.div>
           )}

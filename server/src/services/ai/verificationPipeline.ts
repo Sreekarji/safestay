@@ -1,6 +1,6 @@
-import { analyzeWithMistral } from './mistralService.js';
-import { analyzeWithGroq } from './groqService.js';
-import { analyzeWithGemini } from './geminiService.js';
+import { analyzeWithMistral } from './mistralService';
+import { analyzeWithGroq } from './groqService';
+import { analyzeWithGemini } from './geminiService';
 
 export interface VerificationResult {
   mistral: {

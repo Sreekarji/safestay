@@ -8,25 +8,29 @@ interface ReportState {
   loading: boolean;
   error: string | null;
   filters: QueryParams;
+  pagination: { total: number; page: number; limit: number; pages: number };
   fetchReports: (params?: QueryParams) => Promise<void>;
   fetchReport: (id: string) => Promise<void>;
-  createReport: (formData: FormData) => Promise<void>;
+  createReport: (data: any) => Promise<any>;
   updateReportStatus: (id: string, status: string) => Promise<void>;
   setFilters: (filters: QueryParams) => void;
 }
 
-export const useReportStore = create<ReportState>((set) => ({
+export const useReportStore = create<ReportState>((set, get) => ({
   reports: [],
   currentReport: null,
   loading: false,
   error: null,
   filters: {},
+  pagination: { total: 0, page: 1, limit: 20, pages: 0 },
 
-  fetchReports: async (params) => {
+  fetchReports: async (params?) => {
     set({ loading: true, error: null });
     try {
-      const data = await reportService.getReports(params);
-      set({ reports: data.reports || data, loading: false });
+      const result = await reportService.getReports({ ...get().filters, ...params });
+      const reports = result?.reports || result || [];
+      const pagination = result?.pagination || { total: reports.length, page: 1, limit: 20, pages: 1 };
+      set({ reports, pagination, loading: false });
     } catch (err: any) {
       set({ error: err.message, loading: false });
     }
@@ -42,11 +46,12 @@ export const useReportStore = create<ReportState>((set) => ({
     }
   },
 
-  createReport: async (formData) => {
+  createReport: async (data) => {
     set({ loading: true, error: null });
     try {
-      await reportService.createReport(formData);
+      const result = await reportService.createReport(data);
       set({ loading: false });
+      return result;
     } catch (err: any) {
       set({ error: err.message, loading: false });
       throw err;
@@ -54,16 +59,11 @@ export const useReportStore = create<ReportState>((set) => ({
   },
 
   updateReportStatus: async (id, status) => {
-    set({ loading: true, error: null });
     try {
-      const updated = await reportService.updateReport(id, { status: status as any });
-      set((state) => ({
-        reports: state.reports.map((r) => (r.id === id ? updated : r)),
-        currentReport: state.currentReport?.id === id ? updated : state.currentReport,
-        loading: false,
-      }));
+      await reportService.updateReport(id, { status } as any);
+      await get().fetchReports();
     } catch (err: any) {
-      set({ error: err.message, loading: false });
+      set({ error: err.message });
     }
   },
 

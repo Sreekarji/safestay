@@ -27,7 +27,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (data) => {
     set({ loading: true, error: null });
     try {
-      const { token, user } = await authService.login(data);
+      const res = await authService.login(data);
+      // Backend wraps: { success, data: { user, token }, message }
+      const payload = res.data || res;
+      const token = payload.token;
+      const user = payload.user;
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       set({ user, token, isAuthenticated: true, loading: false });
@@ -71,7 +75,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       return;
     }
     try {
-      const user = await authService.getProfile();
+      const res = await authService.getProfile();
+      const user = res.data || res;
       set({ user, isAuthenticated: true });
     } catch {
       localStorage.removeItem('token');

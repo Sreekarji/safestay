@@ -27,7 +27,7 @@ export const otpSchema = z.object({
 
 export const reportSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters'),
-  category: z.enum(['harassment', 'theft', 'unsafe_area', 'infrastructure', 'health_hazard', 'other']),
+  category: z.enum(['fire_safety', 'water_quality', 'structural', 'electrical', 'hygiene', 'security', 'food_safety', 'other']),
   severity: z.enum(['low', 'medium', 'high', 'critical']),
   description: z.string().min(20, 'Description must be at least 20 characters'),
   location: z.string().min(3, 'Location is required'),

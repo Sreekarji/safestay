@@ -1,29 +1,45 @@
 import api from './api';
 import type { Report, QueryParams } from '@/types';
 
+function unwrap(res: any) {
+  const body = res.data;
+  if (body && body.success !== undefined && body.data !== undefined) return body.data;
+  return body;
+}
+
 export const reportService = {
-  async createReport(formData: FormData) {
-    const response = await api.post('/reports', formData);
-    return response.data as Report;
+  async createReport(data: any) {
+    const res = await api.post('/reports', data);
+    return unwrap(res);
   },
 
   async getReports(params?: QueryParams) {
-    const response = await api.get('/reports', { params });
-    return response.data;
+    const res = await api.get('/reports', { params });
+    return unwrap(res);
   },
 
   async getReport(id: string) {
-    const response = await api.get(`/reports/${id}`);
-    return response.data as Report;
+    const res = await api.get(`/reports/${id}`);
+    return unwrap(res);
   },
 
   async updateReport(id: string, data: Partial<Report>) {
-    const response = await api.put(`/reports/${id}`, data);
-    return response.data as Report;
+    const res = await api.put(`/reports/${id}`, data);
+    return unwrap(res);
   },
 
   async deleteReport(id: string) {
-    const response = await api.delete(`/reports/${id}`);
-    return response.data;
+    const res = await api.delete(`/reports/${id}`);
+    return unwrap(res);
+  },
+
+  async getMyReports(params?: any) {
+    const res = await api.get('/reports/my-reports', { params });
+    return unwrap(res);
+  },
+
+  async upvoteReport(id: string) {
+    const res = await api.post(`/reports/${id}/upvote`);
+    return unwrap(res);
   },
 };

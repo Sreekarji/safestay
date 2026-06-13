@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
-import { runVerificationPipeline } from '../services/ai/verificationPipeline.js';
-import { generateSpeech, generateSSISummary } from '../services/voice/elevenLabsService.js';
-import { PRE_CACHED_AI_RESPONSES } from '../services/ai/preCachedResponses.js';
+import { runVerificationPipeline } from '../services/ai/verificationPipeline';
+import { generateSpeech, generateSSISummary } from '../services/voice/elevenLabsService';
+import { PRE_CACHED_AI_RESPONSES } from '../services/ai/preCachedResponses';
 
 export const verifyReport = async (req: Request, res: Response) => {
   try {

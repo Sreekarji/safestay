@@ -7,14 +7,13 @@ import { LoginForm } from '@/components/auth/LoginForm';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAuthStore } from '@/stores/authStore';
-import type { LoginFormData } from '@/lib/validations';
 
 export function Login() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, error, clearError } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
-  const handleSubmit = async (data: LoginFormData) => {
+  const handleSubmit = async (data: any) => {
     try { setLocalError(null); clearError(); await login(data); navigate('/dashboard'); }
     catch (err: any) { setLocalError(err.message || 'Login failed'); }
   };
