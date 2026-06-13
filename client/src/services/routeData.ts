@@ -129,14 +129,14 @@ function calculateRouteIntelligence(
   const nightSafety = Math.max(30, minScore + 10);
 
   const recommendations = [
-    { level: 'safe', text: `Recommended route for all students. Well-lit corridors with regular patrol presence. Safe for night travel until 11 PM.` },
-    { level: 'moderate', text: `Generally safe during daytime. Exercise caution during evening hours. Consider traveling with friends after 9 PM.` },
-    { level: 'high-risk', text: `Use alternative routes during night hours. Several safety concerns reported. Consider cab services for late travel.` },
+    { level: 'safe', text: `Recommended route for all students, including female travelers. Well-lit corridors with regular patrol presence. No recent security incidents reported along this corridor. Safe for night travel until 11 PM.` },
+    { level: 'moderate', text: `Generally safe during daytime hours (6 AM – 9 PM). Exercise caution during evening hours near ${hotspots[0]?.label.toLowerCase() || 'commercial areas'}. Consider traveling with friends after 9 PM. Keep emergency contacts handy.` },
+    { level: 'high-risk', text: `⚠️ Use alternative routes during night hours (after 8 PM). Multiple safety concerns reported along this corridor. ${hotspots.length} risk zones identified. Consider cab services for late travel. Female students should avoid this route after sunset.` },
   ];
 
   const aiSummaries = [
-    `Based on reports from accommodations near ${accommodation.area} and along the corridor to ${college.area}, this route is ${riskLevel === 'safe' ? 'generally safe' : riskLevel === 'moderate' ? 'moderately safe' : 'concerning'}. ${hotspots.length > 0 ? `The area around ${hotspots[0].label.toLowerCase()} has received attention from local authorities.` : ''} Students are advised to ${riskLevel === 'safe' ? 'travel freely during most hours' : 'avoid travel after 10 PM'}.`,
-    `Analysis of ${hotspots.reduce((s, h) => s + h.reportCount, 0)} reports along this corridor shows ${riskLevel === 'safe' ? 'minimal safety concerns' : 'some areas requiring attention'}. The route passes through ${accommodation.area} which has ${avgScore >= 80 ? 'strong' : 'moderate'} safety ratings. ${nightSafety >= 70 ? 'Night safety is also commendable.' : 'Late night travel should be avoided.'}`,
+    `Based on analysis of ${hotspots.reduce((s, h) => s + h.reportCount, 0)} reports from accommodations near ${accommodation.area} and along the corridor to ${college.area}, this route is ${riskLevel === 'safe' ? 'generally safe' : riskLevel === 'moderate' ? 'moderately safe' : 'concerning'}. ${hotspots.length > 0 ? `The area around ${hotspots[0].label.toLowerCase()} has received a ${avgScore >= 60 ? 'small' : 'significant'} increase in safety complaints during late evening hours. Local authorities have been notified and additional lighting has been requested.` : 'No major safety concerns have been reported along this route.'} Students are advised to ${riskLevel === 'safe' ? 'travel freely during most hours with standard precautions' : riskLevel === 'moderate' ? 'avoid travel after 10 PM and stay in groups during evening hours' : 'use alternative routes after 8 PM and consider cab services for late travel'}.`,
+    `This ${riskLevel === 'safe' ? 'well-maintained' : riskLevel === 'moderate' ? 'moderate-risk' : 'high-risk'} corridor spans ${distanceKm.toFixed(1)} km from ${accommodation.area} to ${college.area}. ${riskLevel === 'safe' ? 'The route features well-lit streets, active security presence, and regular patrol routes.' : `The route passes through ${hotspots.length} area${hotspots.length !== 1 ? 's' : ''} with elevated safety concerns.`} Night safety rating of ${nightSafety}/100 ${nightSafety >= 70 ? 'indicates strong overnight security' : nightSafety >= 50 ? 'suggests moderate overnight safety' : 'suggests limited overnight security measures'}. ${hotspots.length > 0 ? `Key concern: ${hotspots[0].label} with ${hotspots[0].reportCount} reports filed.` : ''}`,
   ];
 
   return {
@@ -182,7 +182,7 @@ export function getRouteComparison(
   return {
     routeA,
     routeB,
-    aiRecommendation: `${better.accommodationName} provides a ${diff > 15 ? 'significantly' : 'moderately'} safer daily commute (${better.safetyScore} vs ${worse.safetyScore}). ${better.accommodationName} has fewer nearby complaints and better night safety ratings. We recommend choosing ${better.accommodationName} for a safer daily commute.`,
+    aiRecommendation: `📊 AI Analysis: ${better.accommodationName} provides a ${diff > 15 ? 'significantly' : 'moderately'} safer daily commute to ${routeA.collegeName} with a safety score of ${better.safetyScore} vs ${worse.safetyScore}. ${better.accommodationName} has ${better.hotspots.length} risk zones compared to ${worse.hotspots.length} for ${worse.accommodationName}. Night safety rating: ${better.nightSafetyRating}/100 vs ${worse.nightSafetyRating}/100. Recommendation: Choose ${better.accommodationName} for a safer, more comfortable daily commute.`,
   };
 }
 
