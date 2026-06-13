@@ -90,7 +90,7 @@ export default function MapView() {
   }
 
   return (
-    <div className="h-full w-full flex flex-col">
+    <div className="w-full flex flex-col" style={{ height: 'calc(100vh - 4rem)' }}>
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 shrink-0 transition-colors relative z-20">
         <div className="flex items-center justify-between">
