@@ -161,6 +161,23 @@ const COMPLAINT_THEMES: Record<string, string[]> = {
   'Poor sanitation standards': ['hygiene'],
 };
 
+const MODERATE_SUMMARIES = [
+  'This accommodation shows mixed safety performance. While basic security measures are in place, there are occasional reports of water supply issues and maintenance delays. The management has been responsive to critical complaints but preventive measures need improvement.',
+  'Located in a developing area, this property has moderate safety standards. Recent reports highlight intermittent power outages and shared facility hygiene concerns. The owner has initiated some improvements but consistency remains a challenge.',
+  'Safety index has fluctuated over the past few months. Key concerns include uneven lighting in common areas and occasional disputes between residents. The property is actively working toward better safety compliance.',
+  'This accommodation maintains acceptable safety levels with room for improvement. Notable issues include delayed maintenance responses and inconsistent visitor management protocols. Overall trend shows gradual improvement.',
+];
+
+const SAFE_SUMMARIES = [
+  'This accommodation maintains excellent safety standards with consistent improvements over time. Well-maintained facilities, responsive management, and strong security measures make it a top choice for safety-conscious students.',
+  'Among the safest options in the area, this property has near-perfect safety ratings. Regular inspections, modern security systems, and proactive maintenance contribute to its outstanding safety record.',
+];
+
+const RISKY_SUMMARIES = [
+  '⚠️ This accommodation has significant safety concerns that require immediate attention. Multiple reports indicate recurring issues with security, hygiene, and maintenance. Students are advised to consider safer alternatives.',
+  'Safety rating has declined substantially over recent months. Critical issues include inadequate security presence, structural maintenance concerns, and repeated hygiene violations. Management response has been insufficient.',
+];
+
 export function generateAISummary(marker: MapMarkerWithHistory, selectedMonth: string): AISummary {
   const monthIdx = marker.history.findIndex((h) => h.month === selectedMonth);
   const current = marker.history[monthIdx]?.score ?? marker.ssi;
@@ -187,15 +204,23 @@ export function generateAISummary(marker: MapMarkerWithHistory, selectedMonth: s
     ? `${trendWord} from ${first} to ${current} over ${monthCount} months`
     : `remained stable around ${current} over ${monthCount} months`;
 
-  const riskText = riskLevel === 'high-risk'
-    ? 'This accommodation is trending toward High Risk status.'
-    : riskLevel === 'moderate'
-    ? 'This accommodation shows moderate safety concerns.'
-    : 'This accommodation maintains good safety standards.';
+  // Select appropriate summary based on risk level
+  const seed = Math.abs(marker.name.charCodeAt(0) + marker.name.charCodeAt(1));
+  let summary: string;
+  if (riskLevel === 'moderate') {
+    summary = MODERATE_SUMMARIES[seed % MODERATE_SUMMARIES.length];
+  } else if (riskLevel === 'high-risk') {
+    summary = RISKY_SUMMARIES[seed % RISKY_SUMMARIES.length];
+  } else {
+    summary = SAFE_SUMMARIES[seed % SAFE_SUMMARIES.length];
+  }
+
+  // Prepend trend context
+  summary = `${rangeText}. ${summary}`;
 
   return {
     accommodationId: marker.id,
-    summary: `${rangeText}. ${selectedThemes[0]}. ${riskText}`,
+    summary,
     trend,
     riskLevel,
   };

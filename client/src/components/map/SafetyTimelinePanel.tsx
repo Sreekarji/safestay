@@ -45,6 +45,15 @@ export default function SafetyTimelinePanel({ marker, selectedMonth, aiSummary, 
             <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">SSI Score · {formatMonth(selectedMonth)}</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold" style={{ background: `${color}20`, color }}>{label}</span>
           </div>
+          {/* Risk level indicator */}
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-2 h-2 rounded-full" style={{ background: color }} />
+            <span className="text-[11px] font-semibold" style={{ color }}>
+              {label === 'Safe' ? '✅ Safe Zone — SSI 70+' :
+               label === 'Moderate' ? '⚠️ Moderate Risk — SSI 40–69' :
+               '🚨 High Risk — SSI Below 40'}
+            </span>
+          </div>
           <div className="flex items-end gap-3">
             <span className="text-4xl font-black" style={{ color }}>{currentScore}</span>
             <div className="flex items-center gap-1 mb-1.5">

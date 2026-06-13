@@ -121,11 +121,6 @@ export default function RoutePlanner({ accommodationId, collegeId, onAccommodati
           icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>}
           options={accOptions} value={selectedAcc?.name ?? ''} onSelect={onAccommodationChange} />
 
-        {/* Connector line */}
-        <div className="flex justify-center -my-1">
-          <div className="w-0.5 h-4 bg-gradient-to-b from-indigo-300 to-purple-300 rounded-full" />
-        </div>
-
         <AutocompleteDropdown label="College" loading={loading}
           icon={<svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M22 10v6M2 10l10-5 10 5-10 5z" /><path d="M6 12v5c3 3 10 3 12 0v-5" /></svg>}
           options={colOptions} value={selectedCol?.name ?? ''} onSelect={onCollegeChange} />
