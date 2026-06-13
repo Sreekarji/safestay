@@ -1,6 +1,6 @@
-import { analyzeWithMistral } from './mistralService';
-import { analyzeWithGroq } from './groqService';
-import { analyzeWithGemini } from './geminiService';
+import { analyzeWithMistral } from './mistralService.js';
+import { analyzeWithGroq } from './groqService.js';
+import { analyzeWithGemini } from './geminiService.js';
 
 export interface VerificationResult {
   mistral: {
@@ -33,12 +33,22 @@ export async function runVerificationPipeline(
   const startTime = Date.now();
 
   try {
-    // Run all three models in parallel
-    const [mistralResult, groqResult, geminiResult] = await Promise.all([
+    // Run all three models in parallel — Promise.allSettled ensures one failure doesn't kill others
+    const [mistralSettled, groqSettled, geminiSettled] = await Promise.allSettled([
       analyzeWithMistral(imageUrl, reportText, category),
       analyzeWithGroq(reportText, category, imageDescription),
       analyzeWithGemini(reportText, category, imageDescription)
     ]);
+
+    const fallback = { verdict: 'uncertain' as const, confidence: 0.5, reasoning: 'Model unavailable — using fallback' };
+
+    const mistralResult = mistralSettled.status === 'fulfilled' ? mistralSettled.value : fallback;
+    const groqResult = groqSettled.status === 'fulfilled' ? groqSettled.value : fallback;
+    const geminiResult = geminiSettled.status === 'fulfilled' ? geminiSettled.value : fallback;
+
+    if (mistralSettled.status === 'rejected') console.error('Mistral failed:', mistralSettled.reason);
+    if (groqSettled.status === 'rejected') console.error('Groq failed:', groqSettled.reason);
+    if (geminiSettled.status === 'rejected') console.error('Gemini failed:', geminiSettled.reason);
 
     // Calculate consensus
     const consensus = calculateConsensus(mistralResult.verdict, groqResult.verdict, geminiResult.verdict);

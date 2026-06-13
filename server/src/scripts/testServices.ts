@@ -1,9 +1,9 @@
 import 'dotenv/config';
-import { analyzeWithMistral } from '../services/ai/mistralService';
-import { analyzeWithGroq } from '../services/ai/groqService';
-import { analyzeWithGemini } from '../services/ai/geminiService';
-import { runVerificationPipeline } from '../services/ai/verificationPipeline';
-import { generateSSISummary } from '../services/voice/elevenLabsService';
+import { analyzeWithMistral } from '../services/ai/mistralService.js';
+import { analyzeWithGroq } from '../services/ai/groqService.js';
+import { analyzeWithGemini } from '../services/ai/geminiService.js';
+import { runVerificationPipeline } from '../services/ai/verificationPipeline.js';
+import { generateSSISummary } from '../services/voice/elevenLabsService.js';
 
 const SAMPLE_IMAGE = 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Fire_extinguisher_at_the_Canberra_Fire_Museum.jpg/800px-Fire_extinguisher_at_the_Canberra_Fire_Museum.jpg';
 const SAMPLE_REPORT = 'The fire extinguisher on the 2nd floor corridor is expired. The pressure gauge shows empty and the seal is broken. This is a critical fire safety violation.';

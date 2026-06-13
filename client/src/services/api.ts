@@ -178,8 +178,8 @@ export function generateAISummary(marker: MapMarkerWithHistory, selectedMonth: s
   else if (diff < -5) trend = 'declining';
 
   let riskLevel: AISummary['riskLevel'] = 'safe';
-  if (current < 60) riskLevel = 'high-risk';
-  else if (current < 80) riskLevel = 'moderate';
+  if (current < 40) riskLevel = 'high-risk';
+  else if (current < 70) riskLevel = 'moderate';
 
   // Pick complaint themes based on score
   const themeKeys = Object.keys(COMPLAINT_THEMES);

@@ -4,7 +4,7 @@ import {
   getVerificationStatus,
   generateVoice,
   getCachedVerification
-} from '../controllers/aiController';
+} from '../controllers/aiController.js';
 
 const router = express.Router();
 

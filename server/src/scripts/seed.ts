@@ -3,7 +3,6 @@ import dotenv from 'dotenv';
 import { User } from '../models/User.js';
 import { Accommodation } from '../models/Accommodation.js';
 import { Report } from '../models/Report.js';
-import { SafetyIndex } from '../models/SafetyIndex.js';
 
 dotenv.config();
 
@@ -467,7 +466,6 @@ const seedDatabase = async () => {
     await User.deleteMany({});
     await Accommodation.deleteMany({});
     await Report.deleteMany({});
-    await SafetyIndex.deleteMany({});
     console.log('🧹 Cleared existing data');
 
     // Create users
@@ -505,37 +503,11 @@ const seedDatabase = async () => {
     const createdReports = await Report.create(reportDocs);
     console.log(`✅ Created ${createdReports.length} reports`);
 
-    // Create safety index entries
-    const safetyIndexDocs = createdAccommodations.map((acc) => ({
-      accommodationId: acc._id,
-      ssi: acc.ssi,
-      categoryScores: acc.categoryScores || {
-        fire_safety: 50,
-        water_quality: 50,
-        structural: 50,
-        electrical: 50,
-        hygiene: 50,
-        security: 50,
-      },
-      reportCount: acc.reportCount,
-      verifiedReportCount: acc.verifiedReportCount,
-      metadata: {
-        totalReports: acc.reportCount,
-        recentReports: Math.floor(acc.reportCount * 0.7),
-        avgSeverity: 5,
-        riskLevel: acc.ssi >= 80 ? 'low' : acc.ssi >= 50 ? 'medium' : 'high',
-      },
-    }));
-
-    await SafetyIndex.create(safetyIndexDocs);
-    console.log(`✅ Created ${safetyIndexDocs.length} safety index entries`);
-
     console.log('\n🎉 Database seeded successfully!');
     console.log('\n📊 Summary:');
     console.log(`   Users: ${createdUsers.length}`);
     console.log(`   Accommodations: ${createdAccommodations.length}`);
     console.log(`   Reports: ${createdReports.length}`);
-    console.log(`   Safety Indexes: ${safetyIndexDocs.length}`);
 
     console.log('\n🔑 Demo Accounts:');
     console.log('   Student: rahul@iiit.ac.in / Password123!');

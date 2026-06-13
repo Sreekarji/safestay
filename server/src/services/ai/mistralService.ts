@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { PRE_CACHED_AI_RESPONSES } from './preCachedResponses.js';
 
 interface MistralResponse {
   verdict: 'accept' | 'reject' | 'uncertain';
@@ -14,6 +15,16 @@ export async function analyzeWithMistral(
   reportText: string,
   category: string
 ): Promise<MistralResponse> {
+  // DEMO_MODE: return cached response instantly
+  if (process.env.DEMO_MODE === 'true') {
+    await new Promise(r => setTimeout(r, 300));
+    const cached = PRE_CACHED_AI_RESPONSES.fire_safety?.broken_extinguisher?.mistral;
+    if (cached) {
+      console.log('[DEMO MODE] Returning cached Mistral response');
+      return { verdict: cached.verdict, confidence: cached.confidence, reasoning: cached.reasoning };
+    }
+  }
+
   const startTime = Date.now();
 
   try {

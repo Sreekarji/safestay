@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { PRE_CACHED_AI_RESPONSES } from './preCachedResponses.js';
 
 interface GroqResponse {
   verdict: 'accept' | 'reject' | 'uncertain';
@@ -6,7 +7,7 @@ interface GroqResponse {
   reasoning: string;
 }
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
+const GROQ_API_KEY=proces..._KEY || '';
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 export async function analyzeWithGroq(
@@ -14,6 +15,16 @@ export async function analyzeWithGroq(
   category: string,
   imageDescription: string
 ): Promise<GroqResponse> {
+  // DEMO_MODE: return cached response instantly
+  if (process.env.DEMO_MODE === 'true') {
+    await new Promise(r => setTimeout(r, 300));
+    const cached = PRE_CACHED_AI_RESPONSES.fire_safety?.broken_extinguisher?.groq;
+    if (cached) {
+      console.log('[DEMO MODE] Returning cached Groq response');
+      return { verdict: cached.verdict, confidence: cached.confidence, reasoning: cached.reasoning };
+    }
+  }
+
   try {
     const response = await fetch(GROQ_API_URL, {
       method: 'POST',

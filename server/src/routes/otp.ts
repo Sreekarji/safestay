@@ -126,7 +126,7 @@ router.post('/verify-email', authLimiter, async (req: Request, res: Response) =>
     }
 
     // Update user verification status
-    await User.findByIdAndUpdate(
+    await User.findOneAndUpdate(
       { email: email.toLowerCase() },
       { isVerified: true }
     );

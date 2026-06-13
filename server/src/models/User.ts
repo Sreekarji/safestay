@@ -132,7 +132,6 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 };
 
 // Indexes
-userSchema.index({ email: 1 }, { unique: true });
 userSchema.index({ role: 1 });
 userSchema.index({ college: 1 });
 userSchema.index({ isBanned: 1 });

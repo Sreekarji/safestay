@@ -27,7 +27,6 @@ const otpSchema = new Schema<IOTP>({
   expiresAt: {
     type: Date,
     required: true,
-    index: { expires: 0 }, // TTL index - auto-delete when expired
   },
 }, {
   timestamps: true,

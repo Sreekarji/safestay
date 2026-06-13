@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
@@ -65,7 +65,7 @@ app.get('/api/health', (req, res) => {
 // ========================
 // Error handling middleware
 // ========================
-app.use((err, req, res, next) => {
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   console.error('Error:', err);
 
   if (err.name === 'MulterError') {

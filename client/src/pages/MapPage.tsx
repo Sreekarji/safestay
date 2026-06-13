@@ -84,9 +84,9 @@ export default function MapPage() {
 
           {mode === 'timeline' && (
             <div className="flex items-center gap-4 text-[11px]">
-              <LegendItem color="bg-green-500" label="Safe" sub="80+" />
-              <LegendItem color="bg-amber-500" label="Moderate" sub="60–79" />
-              <LegendItem color="bg-red-500" label="Risky" sub="<60" />
+              <LegendItem color="bg-green-500" label="Safe" sub="70+" />
+              <LegendItem color="bg-amber-500" label="Moderate" sub="40–69" />
+              <LegendItem color="bg-red-500" label="Risky" sub="<40" />
             </div>
           )}
         </div>

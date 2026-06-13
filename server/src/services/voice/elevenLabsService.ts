@@ -17,6 +17,13 @@ const ELEVENLABS_CONFIG: ElevenLabsConfig = {
 const ELEVENLABS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 
 export async function generateSpeech(text: string): Promise<Buffer> {
+  // DEMO_MODE: return fallback audio instantly
+  if (process.env.DEMO_MODE === 'true') {
+    await new Promise(r => setTimeout(r, 300));
+    console.log(`[DEMO MODE] ElevenLabs fallback — would speak: "${text}"`);
+    return generateFallbackAudio(text);
+  }
+
   const { apiKey, voiceId, modelId } = ELEVENLABS_CONFIG;
 
   if (!apiKey) {

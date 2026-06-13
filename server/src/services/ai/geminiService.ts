@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { PRE_CACHED_AI_RESPONSES } from './preCachedResponses.js';
 
 interface GeminiResponse {
   verdict: 'accept' | 'reject' | 'uncertain';
@@ -7,14 +8,23 @@ interface GeminiResponse {
 }
 
 // Get API key from environment
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
-const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const GEMINI_API_KEY=*** const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
 
 export async function analyzeWithGemini(
   reportText: string,
   category: string,
   imageDescription: string
 ): Promise<GeminiResponse> {
+  // DEMO_MODE: return cached response instantly
+  if (process.env.DEMO_MODE === 'true') {
+    await new Promise(r => setTimeout(r, 300));
+    const cached = PRE_CACHED_AI_RESPONSES.fire_safety?.broken_extinguisher?.gemini;
+    if (cached) {
+      console.log('[DEMO MODE] Returning cached Gemini response');
+      return { verdict: cached.verdict, confidence: cached.confidence, reasoning: cached.reasoning };
+    }
+  }
+
   try {
     const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
