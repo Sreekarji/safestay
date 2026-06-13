@@ -16,9 +16,10 @@ const LIGHT_TILE = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.p
 // ── Custom SSI icon ──────────────────────────────────────────
 function createSSIIcon(ssi: number): L.DivIcon {
   const color = getSSIColor(ssi);
+  const glow = ssi >= 70 ? 'rgba(34,197,94,0.4)' : ssi >= 40 ? 'rgba(245,158,11,0.5)' : 'rgba(239,68,68,0.4)';
   return L.divIcon({
     className: 'ssi-marker-wrapper',
-    html: `<div class="ssi-marker" style="background:${color}">${ssi}</div>`,
+    html: `<div class="ssi-marker" style="background:${color};box-shadow:0 2px 12px ${glow}">${ssi}</div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
     popupAnchor: [0, -20],
