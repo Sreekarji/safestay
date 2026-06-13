@@ -1,22 +1,52 @@
 @echo off
 title SafeStay Setup
+chcp 65001 >nul 2>&1
 color 0B
 
 echo.
-echo   ┌─────────────────────────────────────┐
-echo   │        SafeStay Setup Script         │
-echo   │   Student Safety Platform            │
-echo   └─────────────────────────────────────┘
+echo   SafeStay Setup Script
+echo   Student Safety Platform
 echo.
 
 :: Check Node
 where node >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [ERROR] Node.js not found. Install from https://nodejs.org
+    echo [ERROR] Node.js not found.
+    echo.
+    echo   Download Node.js 20 LTS from: https://nodejs.org
+    echo   Choose the "LTS" version, NOT "Current".
+    echo.
     pause
     exit /b 1
 )
-for /f "tokens=*" %%i in ('node -v') do echo [OK] Node.js %%i
+
+for /f "tokens=*" %%i in ('node -v') do set NODE_VER=%%i
+echo [OK] Node.js %NODE_VER%
+
+:: Check node version is not too new (v25+ has npm issues on Windows)
+for /f "tokens=1 delims=." %%a in ("%NODE_VER:v=%") do set NODE_MAJOR=%%a
+if %NODE_MAJOR% GEQ 25 (
+    echo.
+    echo [ERROR] Node.js v%NODE_MAJOR% is too new and npm is broken on Windows.
+    echo.
+    echo   Fix: Install Node.js 20 LTS from https://nodejs.org
+    echo   1. Go to https://nodejs.org
+    echo   2. Download the "LTS" version (20.x or 22.x)
+    echo   3. Run the installer
+    echo   4. Close and reopen this terminal
+    echo   5. Run setup.bat again
+    echo.
+    pause
+    exit /b 1
+)
+
+:: Check npm works
+call npm --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [ERROR] npm is broken. Install Node.js 20 LTS from https://nodejs.org
+    pause
+    exit /b 1
+)
 for /f "tokens=*" %%i in ('npm -v') do echo [OK] npm %%i
 
 :: Navigate to script directory
@@ -69,10 +99,10 @@ if %errorlevel% neq 0 (
 cd ..
 
 echo.
-echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ========================================
 echo   Setup complete!
 echo.
 echo   Now run:  start.bat
-echo ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+echo ========================================
 echo.
 pause
