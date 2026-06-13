@@ -56,7 +56,7 @@ export default function SearchBar({ markers, query, onQueryChange, onMarkerSelec
   const areaGroups = useMemo(() => groupByArea(searchResults), [searchResults]);
 
   return (
-    <div ref={searchRef} className="absolute top-4 left-20 z-[1001] w-80">
+    <div ref={searchRef} className="absolute top-4 left-4 z-[1001] w-80">
       <div className="relative">
         <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />

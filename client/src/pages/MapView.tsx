@@ -197,7 +197,7 @@ export default function MapView() {
 
             {/* Route planner (route mode) */}
             {mode === 'route' && (
-              <div className="absolute top-4 left-20 z-[1002]">
+              <div className="absolute top-4 left-4 z-[1002]">
                 <RoutePlanner accommodationId={accommodationId} collegeId={collegeId}
                   onAccommodationChange={setAccommodationId} onCollegeChange={setCollegeId} />
                 {/* Route comparison toggle */}
