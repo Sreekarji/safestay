@@ -12,7 +12,7 @@ export async function analyzeWithGemini(reportText: string, category: string, im
   if (process.env.DEMO_MODE === 'true') {
     await new Promise(r => setTimeout(r, 300));
     const cached = PRE_CACHED_AI_RESPONSES.fire_safety?.broken_extinguisher?.gemini;
-    if (cached) { console.log('[DEMO MODE] Returning cached Gemini response'); return { verdict: cached.verdict, confidence: cached.confidence, reasoning: cached.reasoning }; }
+    if (cached) { console.log('[DEMO MODE] Returning cached Gemini response'); return { verdict: cached.verdict as GeminiResponse['verdict'], confidence: cached.confidence, reasoning: cached.reasoning }; }
   }
   try {
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
@@ -23,10 +23,10 @@ export async function analyzeWithGemini(reportText: string, category: string, im
     const content = result.response.text();
     if (!content) throw new Error('No response from Gemini');
     const parsed = JSON.parse(content);
-    return { verdict: parsed.verdict || 'uncertain', confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)), reasoning: parsed.reasoning || 'Secondary validation completed' };
+    return { verdict: (parsed.verdict || 'uncertain') as GeminiResponse['verdict'], confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)), reasoning: parsed.reasoning || 'Secondary validation completed' };
   } catch (error) { console.error('Gemini API error:', error); return getGeminiFallback(category); }
 }
 
 function getGeminiFallback(category: string): GeminiResponse {
-  return { verdict: 'uncertain', confidence: 0.5, reasoning: 'Unable to complete Gemini validation for ' + category + '. Using fallback.' };
+  return { verdict: 'uncertain' as const, confidence: 0.5, reasoning: 'Unable to complete Gemini validation for ' + category + '. Using fallback.' };
 }

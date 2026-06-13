@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { PRE_CACHED_AI_RESPONSES } from './preCachedResponses';
 
 interface MistralResponse {
@@ -14,7 +13,7 @@ export async function analyzeWithMistral(imageUrl: string, reportText: string, c
   if (process.env.DEMO_MODE === 'true') {
     await new Promise(r => setTimeout(r, 300));
     const cached = PRE_CACHED_AI_RESPONSES.fire_safety?.broken_extinguisher?.mistral;
-    if (cached) { console.log('[DEMO MODE] Returning cached Mistral response'); return { verdict: cached.verdict, confidence: cached.confidence, reasoning: cached.reasoning }; }
+    if (cached) { console.log('[DEMO MODE] Returning cached Mistral response'); return { verdict: cached.verdict as MistralResponse['verdict'], confidence: cached.confidence, reasoning: cached.reasoning }; }
   }
   try {
     const response = await fetch(MISTRAL_API_URL, {
@@ -30,10 +29,10 @@ export async function analyzeWithMistral(imageUrl: string, reportText: string, c
     const content = data.choices?.[0]?.message?.content;
     if (!content) throw new Error('No response from Mistral');
     const parsed = JSON.parse(content);
-    return { verdict: parsed.verdict || 'uncertain', confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)), reasoning: parsed.reasoning || 'Analysis completed' };
+    return { verdict: (parsed.verdict || 'uncertain') as MistralResponse['verdict'], confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)), reasoning: parsed.reasoning || 'Analysis completed' };
   } catch (error) { console.error('Mistral API error:', error); return getMistralFallback(category); }
 }
 
 function getMistralFallback(category: string): MistralResponse {
-  return { verdict: 'uncertain', confidence: 0.5, reasoning: 'Unable to complete Mistral analysis for ' + category + '. Using fallback.' };
+  return { verdict: 'uncertain' as const, confidence: 0.5, reasoning: 'Unable to complete Mistral analysis for ' + category + '. Using fallback.' };
 }

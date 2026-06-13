@@ -198,6 +198,5 @@ reportSchema.index({ userId: 1 });
 reportSchema.index({ createdAt: -1 });
 reportSchema.index({ category: 1 });
 reportSchema.index({ 'aiVerification.consensus': 1 });
-reportSchema.index({ status: 1 });
 
 export const Report = mongoose.model<IReport>('Report', reportSchema);

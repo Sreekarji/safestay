@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { PRE_CACHED_AI_RESPONSES } from './preCachedResponses';
 
 interface GroqResponse {
@@ -20,7 +19,7 @@ export async function analyzeWithGroq(
     const cached = PRE_CACHED_AI_RESPONSES.fire_safety?.broken_extinguisher?.groq;
     if (cached) {
       console.log('[DEMO MODE] Returning cached Groq response');
-      return { verdict: cached.verdict, confidence: cached.confidence, reasoning: cached.reasoning };
+      return { verdict: cached.verdict as GroqResponse['verdict'], confidence: cached.confidence, reasoning: cached.reasoning };
     }
   }
 
@@ -51,7 +50,7 @@ Respond in JSON: {"verdict":"accept"|"reject"|"uncertain","confidence":0.0-1.0,"
     const content = data.choices?.[0]?.message?.content;
     if (!content) throw new Error('No response from Groq');
     const parsed = JSON.parse(content);
-    return { verdict: parsed.verdict || 'uncertain', confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)), reasoning: parsed.reasoning || 'Context validation completed' };
+    return { verdict: (parsed.verdict || 'uncertain') as GroqResponse['verdict'], confidence: Math.min(1, Math.max(0, parsed.confidence || 0.5)), reasoning: parsed.reasoning || 'Context validation completed' };
   } catch (error) {
     console.error('Groq API error:', error);
     return getGroqFallback(category);
@@ -59,5 +58,5 @@ Respond in JSON: {"verdict":"accept"|"reject"|"uncertain","confidence":0.0-1.0,"
 }
 
 function getGroqFallback(category: string): GroqResponse {
-  return { verdict: 'uncertain', confidence: 0.5, reasoning: `Unable to complete Groq validation for ${category}. Using fallback.` };
+  return { verdict: 'uncertain' as const, confidence: 0.5, reasoning: `Unable to complete Groq validation for ${category}. Using fallback.` };
 }

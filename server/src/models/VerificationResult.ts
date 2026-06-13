@@ -2,7 +2,7 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IVerificationResult extends Document {
   reportId: mongoose.Types.ObjectId;
-  model: 'mistral' | 'groq' | 'gemini';
+  modelName: 'mistral' | 'groq' | 'gemini';
   verdict: 'accept' | 'reject' | 'uncertain';
   confidence: number;
   reasoning: string;
@@ -21,7 +21,7 @@ const verificationResultSchema = new Schema<IVerificationResult>({
     required: true,
     index: true,
   },
-  model: {
+  modelName: {
     type: String,
     enum: ['mistral', 'groq', 'gemini'],
     required: true,
@@ -53,8 +53,8 @@ const verificationResultSchema = new Schema<IVerificationResult>({
 });
 
 // Indexes
-verificationResultSchema.index({ reportId: 1, model: 1 });
-verificationResultSchema.index({ model: 1, verdict: 1 });
+verificationResultSchema.index({ reportId: 1, modelName: 1 });
+verificationResultSchema.index({ modelName: 1, verdict: 1 });
 verificationResultSchema.index({ createdAt: -1 });
 
 export const VerificationResult = mongoose.model<IVerificationResult>('VerificationResult', verificationResultSchema);

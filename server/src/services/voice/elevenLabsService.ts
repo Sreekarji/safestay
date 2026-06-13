@@ -1,7 +1,3 @@
-import fetch from 'node-fetch';
-import * as fs from 'fs';
-import * as path from 'path';
-
 interface ElevenLabsConfig {
   apiKey: string;
   voiceId: string;
@@ -16,6 +12,10 @@ const ELEVENLABS_CONFIG: ElevenLabsConfig = {
 
 const ELEVENLABS_URL = 'https://api.elevenlabs.io/v1/text-to-speech';
 
+/**
+ * Generate speech audio from text using ElevenLabs API.
+ * Uses Node 18+ built-in fetch (no external dependency needed).
+ */
 export async function generateSpeech(text: string): Promise<Buffer> {
   // DEMO_MODE: return fallback audio instantly
   if (process.env.DEMO_MODE === 'true') {
@@ -27,7 +27,8 @@ export async function generateSpeech(text: string): Promise<Buffer> {
   const { apiKey, voiceId, modelId } = ELEVENLABS_CONFIG;
 
   if (!apiKey) {
-    throw new Error('ElevenLabs API key not configured');
+    console.warn('ElevenLabs API key not configured, using fallback');
+    return generateFallbackAudio(text);
   }
 
   try {
@@ -53,24 +54,29 @@ export async function generateSpeech(text: string): Promise<Buffer> {
       return generateFallbackAudio(text);
     }
 
-    const audioBuffer = await response.buffer();
-    return audioBuffer;
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   } catch (error) {
     console.error('ElevenLabs synthesis error, using fallback:', error);
     return generateFallbackAudio(text);
   }
 }
 
+/**
+ * Generate fallback audio placeholder (valid minimal MP3 header).
+ * Frontend should display text instead of playing this.
+ */
 function generateFallbackAudio(text: string): Buffer {
-  // Generate a minimal valid MP3 file header as placeholder
-  // In demo mode, the frontend will display text instead of playing audio
-  console.log(`[DEMO MODE] ElevenLabs fallback — would speak: "${text}"`);
-  // Return a tiny valid buffer (ID3v2 header + silence)
+  console.log(`[FALLBACK] ElevenLabs — would speak: "${text}"`);
+  // Return a tiny valid buffer (ID3v2 header)
   return Buffer.from([
-    0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 // ID3v2 header
+    0x49, 0x44, 0x33, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
   ]);
 }
 
+/**
+ * Generate SSI summary audio.
+ */
 export async function generateSSISummary(
   accommodationName: string,
   ssi: number,
@@ -80,14 +86,17 @@ export async function generateSSISummary(
   return generateSpeech(text);
 }
 
+/**
+ * Generate safety briefing audio.
+ */
 export async function generateSafetyBriefing(
   accommodationName: string,
   reports: Array<{ category: string; severity: number }>
 ): Promise<Buffer> {
   const highSeverityReports = reports.filter(r => r.severity >= 7);
-  
+
   let text = `Safety briefing for ${accommodationName}. `;
-  
+
   if (highSeverityReports.length > 0) {
     text += `There are ${highSeverityReports.length} high severity safety concerns: `;
     text += highSeverityReports.map(r => r.category).join(', ') + '. ';
