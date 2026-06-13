@@ -10,12 +10,19 @@ export function ReportSubmit() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { createReport, loading } = useReportStore();
+  const severityMap: Record<string, number> = { low: 3, medium: 5, high: 7, critical: 9 };
   const handleSubmit = async (data: ReportFormData, images: File[]) => {
     try {
-      const fd = new FormData();
-      Object.entries(data).forEach(([k, v]) => fd.append(k, v as string));
-      images.forEach((f) => fd.append('images', f));
-      await createReport(fd);
+      const payload = {
+        accommodationId: data.accommodationId,
+        category: data.category,
+        severity: severityMap[data.severity as string] || 5,
+        title: data.title,
+        description: data.description,
+        images: [],
+        isAnonymous: false,
+      };
+      await createReport(payload);
       toast.success('Report submitted!'); navigate('/dashboard');
     } catch (err: any) { toast.error(err.message); }
   };
