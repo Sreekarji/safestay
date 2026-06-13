@@ -16,6 +16,7 @@ import uploadRoutes from './routes/upload.js';
 import ownerRoutes from './routes/owner.js';
 import adminRoutes from './routes/admin.js';
 import analyticsRoutes from './routes/analytics.js';
+import aiRoutes from './routes/aiRoutes.js';
 
 // Load environment variables
 dotenv.config();
@@ -50,6 +51,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/ai', aiRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
