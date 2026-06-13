@@ -38,7 +38,11 @@ export async function fetchMapMarkersWithHistory() {
 
 // Dashboard fetch functions
 export async function fetchDashboardStats() {
-  return await unwrap(await api.get('/admin/stats'));
+  try {
+    return await unwrap(await api.get('/analytics/stats'));
+  } catch {
+    return { totalReports: 0, pending: 0, verified: 0, resolved: 0 };
+  }
 }
 
 export async function fetchSSITrend() {

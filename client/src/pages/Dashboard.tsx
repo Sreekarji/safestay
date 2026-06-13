@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
 import { FileText, Map } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { StatsGrid } from '@/components/dashboard/StatsGrid';
 import { RiskChart } from '@/components/dashboard/RiskChart';
@@ -22,29 +22,33 @@ export function Dashboard() {
   const [recentReports, setRecentReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const [statsData, trendData, areaData, catData, reportsData] = await Promise.allSettled([
-          fetchDashboardStats(),
-          fetchSSITrend(),
-          fetchAreaRisks(),
-          fetchCategoryBreakdown(),
-          fetchRecentReports(),
-        ]);
-        if (statsData.status === 'fulfilled') setStats(statsData.value);
-        if (trendData.status === 'fulfilled') setSsiTrend(trendData.value);
-        if (areaData.status === 'fulfilled') setAreaRisks(areaData.value);
-        if (catData.status === 'fulfilled') setCategories(catData.value);
-        if (reportsData.status === 'fulfilled') setRecentReports(reportsData.value);
-      } catch (err) {
-        console.error('Failed to load dashboard:', err);
-      } finally {
-        setLoading(false);
-      }
+  const location = useLocation();
+
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [statsData, trendData, areaData, catData, reportsData] = await Promise.allSettled([
+        fetchDashboardStats(),
+        fetchSSITrend(),
+        fetchAreaRisks(),
+        fetchCategoryBreakdown(),
+        fetchRecentReports(),
+      ]);
+      if (statsData.status === 'fulfilled') setStats(statsData.value);
+      if (trendData.status === 'fulfilled') setSsiTrend(trendData.value);
+      if (areaData.status === 'fulfilled') setAreaRisks(areaData.value);
+      if (catData.status === 'fulfilled') setCategories(catData.value);
+      if (reportsData.status === 'fulfilled') setRecentReports(reportsData.value);
+    } catch (err) {
+      console.error('Failed to load dashboard:', err);
+    } finally {
+      setLoading(false);
     }
-    loadData();
   }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [location.key, loadData]);
 
   const hour = new Date().getHours();
   const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';

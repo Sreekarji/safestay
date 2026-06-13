@@ -96,6 +96,55 @@ router.get('/dashboard', authMiddleware, adminMiddleware, async (req: AuthReques
 });
 
 // ========================
+// GET /api/analytics/stats (public - for student dashboard)
+// ========================
+router.get('/stats', async (req, res: Response) => {
+  try {
+    const [totalAccommodations, totalReports, verifiedReports, categoryBreakdown, riskDistribution] = await Promise.all([
+      Accommodation.countDocuments({ isActive: true }),
+      Report.countDocuments(),
+      Report.countDocuments({ status: { $in: ['ai_verified', 'approved', 'resolved', 'verified'] } }),
+      Report.aggregate([
+        { $group: { _id: '$category', count: { $sum: 1 } } },
+      ]),
+      Accommodation.aggregate([
+        { $match: { isActive: true } },
+        {
+          $group: {
+            _id: {
+              $switch: {
+                branches: [
+                  { case: { $gte: ['$ssi', 80] }, then: 'low' },
+                  { case: { $gte: ['$ssi', 50] }, then: 'medium' },
+                ],
+                default: 'high',
+              },
+            },
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        totalReports,
+        pending: await Report.countDocuments({ status: 'pending' }),
+        verified: verifiedReports,
+        resolved: await Report.countDocuments({ status: { $in: ['resolved', 'verified'] } }),
+        totalAccommodations,
+        categoryBreakdown,
+        riskDistribution,
+      },
+    });
+  } catch (error) {
+    console.error('Get stats error:', error);
+    res.status(500).json({ success: false, error: 'Server error', code: 'DATABASE_ERROR' });
+  }
+});
+
+// ========================
 // GET /api/analytics/area-risk
 // ========================
 router.get('/area-risk', async (req, res: Response) => {

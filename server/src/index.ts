@@ -107,6 +107,17 @@ const startServer = async () => {
 📍 Port: ${PORT}
 🌐 Environment: ${process.env.NODE_ENV || 'development'}
 🔗 API: http://localhost:${PORT}/api
+
+🔑 API Keys Status:
+   MongoDB:    ${process.env.MONGO_URI ? '✅' : '❌'}
+   JWT Secret: ${process.env.JWT_SECRET ? '✅' : '❌'}
+   Cloudinary: ${process.env.CLOUDINARY_CLOUD_NAME ? '✅' : '❌'}
+   Email:      ${process.env.EMAIL_USER ? '✅' : '❌'}
+   Mistral:    ${process.env.MISTRAL_API_KEY ? '✅' : '❌'}
+   Groq:       ${process.env.GROQ_API_KEY ? '✅' : '❌'}
+   Gemini:     ${process.env.GEMINI_API_KEY ? '✅' : '❌'}
+   Sarvam AI:  ${process.env.SARVAM_API_KEY ? '✅' : '❌'}
+   ElevenLabs: ${process.env.ELEVENLABS_API_KEY ? '✅' : '❌'}
 ━━━━━━━━━━━━━━━━━━━━━━
       `);
     });
