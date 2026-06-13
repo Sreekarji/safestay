@@ -6,6 +6,8 @@ import dotenv from 'dotenv';
 import connectDB from './config/db.js';
 import { configureCloudinary } from './config/cloudinary.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import logger from './utils/logger.js';
 
 // Route imports
 import authRoutes from './routes/auth.js';
@@ -63,28 +65,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // ========================
-// Error handling middleware
+// 404 handler for undefined routes
 // ========================
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err);
+app.use(notFoundHandler);
 
-  if (err.name === 'MulterError') {
-    if (err.code === 'LIMIT_FILE_SIZE') {
-      res.status(400).json({
-        success: false,
-        error: 'File size too large. Maximum 5MB allowed.',
-        code: 'UPLOAD_ERROR',
-      });
-      return;
-    }
-  }
-
-  res.status(err.status || 500).json({
-    success: false,
-    error: err.message || 'Internal server error',
-    code: err.code || 'DATABASE_ERROR',
-  });
-});
+// ========================
+// Centralized error handling
+// ========================
+app.use(errorHandler);
 
 // ========================
 // Start server

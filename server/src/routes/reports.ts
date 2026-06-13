@@ -4,34 +4,35 @@ import { Accommodation } from '../models/Accommodation.js';
 import { VerificationResult } from '../models/VerificationResult.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { reportLimiter } from '../middleware/rateLimiter.js';
+import { validate } from '../middleware/validate.js';
 import { verifyReport } from '../utils/aiVerification.js';
 import { calculateSSI } from '../utils/trustScore.js';
+import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { parsePagination, buildPaginationMeta } from '../utils/pagination.js';
+import { SEVERITY, REPORT_CATEGORIES } from '../config/constants.js';
 
 const router = Router();
 
 // ========================
 // POST /api/reports
 // ========================
-router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Response) => {
+router.post('/', authMiddleware, reportLimiter, validate({
+  accommodationId: { required: true, type: 'string' },
+  category: { required: true, type: 'string', enum: REPORT_CATEGORIES },
+  severity: { required: true, type: 'number', min: SEVERITY.MIN, max: SEVERITY.MAX },
+  title: { required: true, type: 'string', minLength: 5, maxLength: 200 },
+  description: { required: true, type: 'string', minLength: 10, maxLength: 2000 },
+}), async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
 
-    // Check if user is a verified student
     if (!user || user.role !== 'student') {
-      res.status(403).json({
-        success: false,
-        error: 'Only verified students can submit reports',
-        code: 'FORBIDDEN',
-      });
+      sendError(res, 'Only verified students can submit reports', 403, 'FORBIDDEN');
       return;
     }
 
     if (!user.isVerified) {
-      res.status(403).json({
-        success: false,
-        error: 'Please verify your email before submitting reports',
-        code: 'FORBIDDEN',
-      });
+      sendError(res, 'Please verify your email before submitting reports', 403, 'FORBIDDEN');
       return;
     }
 
@@ -40,33 +41,10 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
       images = [], isAnonymous = false,
     } = req.body;
 
-    // Validation
-    if (!accommodationId || !category || !severity || !title || !description) {
-      res.status(400).json({
-        success: false,
-        error: 'Please provide all required fields',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
-
-    if (severity < 1 || severity > 10) {
-      res.status(400).json({
-        success: false,
-        error: 'Severity must be between 1 and 10',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
-
     // Check accommodation exists
     const accommodation = await Accommodation.findById(accommodationId);
     if (!accommodation) {
-      res.status(404).json({
-        success: false,
-        error: 'Accommodation not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'Accommodation not found', 404, 'NOT_FOUND');
       return;
     }
 
@@ -94,7 +72,6 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
       description,
       severity
     ).then(async (aiResult) => {
-      // Update report with AI results
       report.aiVerification = {
         mistral: aiResult.mistral || undefined,
         groq: aiResult.groq || undefined,
@@ -104,21 +81,18 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
         verifiedAt: new Date(),
       };
 
-      // Set status based on consensus
       if (aiResult.consensus === 'accept' && aiResult.overallConfidence >= 0.85) {
         report.status = 'ai_verified';
       } else if (aiResult.consensus === 'reject') {
         report.status = 'rejected';
       }
-      // Otherwise remains 'pending' for admin review
 
       await report.save();
 
-      // Save individual verification results
       if (aiResult.mistral) {
         await VerificationResult.create({
           reportId: report._id,
-          model: 'mistral',
+          modelName: 'mistral',
           verdict: aiResult.mistral.verdict,
           confidence: aiResult.mistral.confidence,
           reasoning: aiResult.mistral.reasoning,
@@ -126,7 +100,7 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
         });
       }
 
-      // Recalculate SSI for the accommodation
+      // Recalculate SSI
       const reports = await Report.find({ accommodationId });
       const { ssi, categoryScores } = calculateSSI(reports, accommodation.ssi);
       accommodation.ssi = ssi;
@@ -142,26 +116,18 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
       console.error('AI verification failed:', err);
     });
 
-    res.status(201).json({
-      success: true,
-      data: {
-        _id: report._id,
-        accommodationId: report.accommodationId,
-        category: report.category,
-        severity: report.severity,
-        title: report.title,
-        status: report.status,
-        isAnonymous: report.isAnonymous,
-      },
-      message: 'Report submitted. AI verification in progress.',
-    });
+    sendSuccess(res, {
+      _id: report._id,
+      accommodationId: report.accommodationId,
+      category: report.category,
+      severity: report.severity,
+      title: report.title,
+      status: report.status,
+      isAnonymous: report.isAnonymous,
+    }, 'Report submitted. AI verification in progress.', 201);
   } catch (error) {
     console.error('Create report error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -177,37 +143,20 @@ router.get('/', async (req, res: Response) => {
     if (status) query.status = status;
     if (category) query.category = category;
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const total = await Report.countDocuments(query);
+    const { page: p, limit: l, skip } = parsePagination({ page, limit }, total);
 
-    const [reports, total] = await Promise.all([
-      Report.find(query)
-        .populate('accommodationId', 'name area ssi')
-        .populate('userId', 'name college isVerified')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(Number(limit)),
-      Report.countDocuments(query),
-    ]);
+    const reports = await Report.find(query)
+      .populate('accommodationId', 'name area ssi')
+      .populate('userId', 'name college isVerified')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(l);
 
-    res.json({
-      success: true,
-      data: {
-        reports,
-        pagination: {
-          total,
-          page: Number(page),
-          limit: Number(limit),
-          pages: Math.ceil(total / Number(limit)),
-        },
-      },
-    });
+    sendSuccess(res, { reports, pagination: buildPaginationMeta(total, p, l) });
   } catch (error) {
     console.error('Get reports error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -221,36 +170,19 @@ router.get('/my-reports', authMiddleware, async (req: AuthRequest, res: Response
     const query: any = { userId: req.user?._id };
     if (status) query.status = status;
 
-    const skip = (Number(page) - 1) * Number(limit);
+    const total = await Report.countDocuments(query);
+    const { page: p, limit: l, skip } = parsePagination({ page, limit }, total);
 
-    const [reports, total] = await Promise.all([
-      Report.find(query)
-        .populate('accommodationId', 'name area ssi')
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(Number(limit)),
-      Report.countDocuments(query),
-    ]);
+    const reports = await Report.find(query)
+      .populate('accommodationId', 'name area ssi')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(l);
 
-    res.json({
-      success: true,
-      data: {
-        reports,
-        pagination: {
-          total,
-          page: Number(page),
-          limit: Number(limit),
-          pages: Math.ceil(total / Number(limit)),
-        },
-      },
-    });
+    sendSuccess(res, { reports, pagination: buildPaginationMeta(total, p, l) });
   } catch (error) {
     console.error('Get my reports error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -264,25 +196,14 @@ router.get('/:id', async (req, res: Response) => {
       .populate('userId', 'name college isVerified');
 
     if (!report) {
-      res.status(404).json({
-        success: false,
-        error: 'Report not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'Report not found', 404, 'NOT_FOUND');
       return;
     }
 
-    res.json({
-      success: true,
-      data: report,
-    });
+    sendSuccess(res, report);
   } catch (error) {
     console.error('Get report error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -294,27 +215,17 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
     const report = await Report.findById(req.params.id);
 
     if (!report) {
-      res.status(404).json({
-        success: false,
-        error: 'Report not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'Report not found', 404, 'NOT_FOUND');
       return;
     }
 
-    // Check ownership
     if (report.userId.toString() !== req.user?._id.toString()) {
-      res.status(403).json({
-        success: false,
-        error: 'Not authorized to update this report',
-        code: 'FORBIDDEN',
-      });
+      sendError(res, 'Not authorized to update this report', 403, 'FORBIDDEN');
       return;
     }
 
     const { title, description, severity, category, images } = req.body;
 
-    // Update fields
     if (title) report.title = title;
     if (description) report.description = description;
     if (severity) report.severity = severity;
@@ -325,7 +236,6 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
       report.images = images;
       report.status = 'pending';
 
-      // Re-run AI verification
       verifyReport(
         report._id.toString(),
         images,
@@ -357,18 +267,10 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
 
     await report.save();
 
-    res.json({
-      success: true,
-      data: report,
-      message: 'Report updated successfully',
-    });
+    sendSuccess(res, report, 'Report updated successfully');
   } catch (error) {
     console.error('Update report error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -380,21 +282,12 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
     const report = await Report.findById(req.params.id);
 
     if (!report) {
-      res.status(404).json({
-        success: false,
-        error: 'Report not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'Report not found', 404, 'NOT_FOUND');
       return;
     }
 
-    // Check ownership or admin
     if (report.userId.toString() !== req.user?._id.toString() && req.user?.role !== 'admin') {
-      res.status(403).json({
-        success: false,
-        error: 'Not authorized to delete this report',
-        code: 'FORBIDDEN',
-      });
+      sendError(res, 'Not authorized to delete this report', 403, 'FORBIDDEN');
       return;
     }
 
@@ -411,17 +304,10 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
       await accommodation.save();
     }
 
-    res.json({
-      success: true,
-      message: 'Report deleted successfully',
-    });
+    sendSuccess(res, null, 'Report deleted successfully');
   } catch (error) {
     console.error('Delete report error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -433,41 +319,29 @@ router.post('/:id/upvote', authMiddleware, async (req: AuthRequest, res: Respons
     const report = await Report.findById(req.params.id);
 
     if (!report) {
-      res.status(404).json({
-        success: false,
-        error: 'Report not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'Report not found', 404, 'NOT_FOUND');
       return;
     }
 
-    // Can't upvote own report
     if (report.userId.toString() === req.user?._id.toString()) {
-      res.status(400).json({
-        success: false,
-        error: 'Cannot upvote your own report',
-        code: 'VALIDATION_ERROR',
-      });
+      sendError(res, 'Cannot upvote your own report', 400, 'VALIDATION_ERROR');
       return;
     }
 
-    // Toggle upvote
     const userId = req.user?._id;
     const upvoteIndex = report.upvotedBy.indexOf(userId);
 
     if (upvoteIndex > -1) {
-      // Remove upvote
       report.upvotedBy.splice(upvoteIndex, 1);
       report.upvotes = Math.max(0, report.upvotes - 1);
     } else {
-      // Add upvote
       report.upvotedBy.push(userId);
       report.upvotes += 1;
     }
 
     await report.save();
 
-    // Recalculate SSI (upvotes affect penalty)
+    // Recalculate SSI
     const accommodation = await Accommodation.findById(report.accommodationId);
     if (accommodation) {
       const reports = await Report.find({ accommodationId: accommodation._id });
@@ -476,20 +350,10 @@ router.post('/:id/upvote', authMiddleware, async (req: AuthRequest, res: Respons
       await accommodation.save();
     }
 
-    res.json({
-      success: true,
-      data: {
-        upvotes: report.upvotes,
-        upvoted: upvoteIndex === -1,
-      },
-    });
+    sendSuccess(res, { upvotes: report.upvotes, upvoted: upvoteIndex === -1 });
   } catch (error) {
     console.error('Upvote error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -503,31 +367,17 @@ router.put('/:id/verify', authMiddleware, async (req: AuthRequest, res: Response
     const report = await Report.findById(req.params.id);
 
     if (!report) {
-      res.status(404).json({
-        success: false,
-        error: 'Report not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'Report not found', 404, 'NOT_FOUND');
       return;
     }
 
-    // Check ownership
     if (report.userId.toString() !== req.user?._id.toString()) {
-      res.status(403).json({
-        success: false,
-        error: 'Not authorized to verify this resolution',
-        code: 'FORBIDDEN',
-      });
+      sendError(res, 'Not authorized to verify this resolution', 403, 'FORBIDDEN');
       return;
     }
 
-    // Check if report is resolved
     if (report.status !== 'resolved') {
-      res.status(400).json({
-        success: false,
-        error: 'Report is not in resolved status',
-        code: 'VALIDATION_ERROR',
-      });
+      sendError(res, 'Report is not in resolved status', 400, 'VALIDATION_ERROR');
       return;
     }
 
@@ -550,18 +400,10 @@ router.put('/:id/verify', authMiddleware, async (req: AuthRequest, res: Response
       await accommodation.save();
     }
 
-    res.json({
-      success: true,
-      data: report,
-      message: isResolved ? 'Resolution verified. SSI updated.' : 'Issue disputed. Admin will review.',
-    });
+    sendSuccess(res, report, isResolved ? 'Resolution verified. SSI updated.' : 'Issue disputed. Admin will review.');
   } catch (error) {
     console.error('Verify resolution error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -574,29 +416,18 @@ router.get('/:id/resolution', authMiddleware, async (req: AuthRequest, res: Resp
       .select('ownerResponse studentVerification status');
 
     if (!report) {
-      res.status(404).json({
-        success: false,
-        error: 'Report not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'Report not found', 404, 'NOT_FOUND');
       return;
     }
 
-    res.json({
-      success: true,
-      data: {
-        ownerResponse: report.ownerResponse,
-        studentVerification: report.studentVerification,
-        status: report.status,
-      },
+    sendSuccess(res, {
+      ownerResponse: report.ownerResponse,
+      studentVerification: report.studentVerification,
+      status: report.status,
     });
   } catch (error) {
     console.error('Get resolution error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 

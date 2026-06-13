@@ -3,10 +3,13 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
+import { validate } from '../middleware/validate.js';
 import { sendEmail } from '../utils/emailService.js';
 import { otpEmailTemplate, welcomeEmailTemplate } from '../utils/emailTemplates.js';
 import { isCollegeEmail, extractCollegeFromEmail } from '../utils/collegeVerification.js';
 import { cloudinary } from '../config/cloudinary.js';
+import { sendSuccess, sendError } from '../utils/apiResponse.js';
+import { JWT_CONFIG } from '../config/constants.js';
 import multer from 'multer';
 
 const router = Router();
@@ -14,7 +17,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Generate JWT token
 const generateToken = (userId: string): string => {
-  return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: '7d' });
+  return jwt.sign({ userId }, process.env.JWT_SECRET!, { expiresIn: JWT_CONFIG.EXPIRES_IN });
 };
 
 // Generate 6-digit OTP
@@ -25,50 +28,27 @@ const generateOTP = (): string => {
 // ========================
 // POST /api/auth/signup
 // ========================
-router.post('/signup', authLimiter, async (req: Request, res: Response) => {
+router.post('/signup', authLimiter, validate({
+  email: { required: true, type: 'string' },
+  password: { required: true, type: 'string', minLength: 8 },
+  name: { required: true, type: 'string', minLength: 2, maxLength: 100 },
+  phone: { required: true, type: 'string' },
+  role: { required: false, type: 'string', enum: ['student', 'owner'] as readonly string[] },
+}), async (req: Request, res: Response) => {
   try {
     const { email, password, name, phone, role = 'student', college, studentId } = req.body;
-
-    // Validation
-    if (!email || !password || !name || !phone) {
-      res.status(400).json({
-        success: false,
-        error: 'Please provide email, password, name, and phone',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
-
-    if (password.length < 8) {
-      res.status(400).json({
-        success: false,
-        error: 'Password must be at least 8 characters',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      res.status(400).json({
-        success: false,
-        error: 'Email already registered',
-        code: 'DUPLICATE',
-      });
+      sendError(res, 'Email already registered', 400, 'DUPLICATE');
       return;
     }
 
     // Check college email for students
-    if (role === 'student') {
-      if (!isCollegeEmail(email)) {
-        res.status(400).json({
-          success: false,
-          error: 'Please use a valid college email address',
-          code: 'VALIDATION_ERROR',
-        });
-        return;
-      }
+    if (role === 'student' && !isCollegeEmail(email)) {
+      sendError(res, 'Please use a valid college email address', 400, 'VALIDATION_ERROR');
+      return;
     }
 
     // Create user
@@ -80,12 +60,11 @@ router.post('/signup', authLimiter, async (req: Request, res: Response) => {
       role,
       college: college || extractCollegeFromEmail(email),
       studentId,
-      isVerified: role === 'student' && isCollegeEmail(email), // Auto-verify college emails
+      isVerified: role === 'student' && isCollegeEmail(email),
     });
 
     await user.save();
 
-    // Generate token
     const token = generateToken(user._id.toString());
 
     // Send welcome email
@@ -95,104 +74,69 @@ router.post('/signup', authLimiter, async (req: Request, res: Response) => {
       html: welcomeEmailTemplate(user.name),
     });
 
-    res.status(201).json({
-      success: true,
-      data: {
-        user: {
-          _id: user._id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          isVerified: user.isVerified,
-        },
-        token,
+    sendSuccess(res, {
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        isVerified: user.isVerified,
       },
-      message: 'Registration successful',
-    });
+      token,
+    }, 'Registration successful', 201);
   } catch (error) {
     console.error('Signup error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error during registration',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error during registration', 500, 'DATABASE_ERROR');
   }
 });
 
 // ========================
 // POST /api/auth/login
 // ========================
-router.post('/login', authLimiter, async (req: Request, res: Response) => {
+router.post('/login', authLimiter, validate({
+  email: { required: true, type: 'string' },
+  password: { required: true, type: 'string' },
+}), async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      res.status(400).json({
-        success: false,
-        error: 'Please provide email and password',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
 
     // Find user and include password
     const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
     if (!user) {
-      res.status(401).json({
-        success: false,
-        error: 'Invalid email or password',
-        code: 'UNAUTHORIZED',
-      });
+      sendError(res, 'Invalid email or password', 401, 'UNAUTHORIZED');
       return;
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
     if (!isPasswordValid) {
-      res.status(401).json({
-        success: false,
-        error: 'Invalid email or password',
-        code: 'UNAUTHORIZED',
-      });
+      sendError(res, 'Invalid email or password', 401, 'UNAUTHORIZED');
       return;
     }
 
     // Check if banned
     if (user.isBanned) {
-      res.status(403).json({
-        success: false,
-        error: 'Account has been banned',
-        code: 'FORBIDDEN',
-      });
+      sendError(res, 'Account has been banned', 403, 'FORBIDDEN');
       return;
     }
 
-    // Generate token
     const token = generateToken(user._id.toString());
 
-    res.json({
-      success: true,
-      data: {
-        user: {
-          _id: user._id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          college: user.college,
-          isVerified: user.isVerified,
-          ownerVerification: user.ownerVerification,
-        },
-        token,
+    sendSuccess(res, {
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        college: user.college,
+        isVerified: user.isVerified,
+        ownerVerification: user.ownerVerification,
       },
-      message: 'Login successful',
-    });
+      token,
+    }, 'Login successful');
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error during login',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error during login', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -203,27 +147,19 @@ router.post('/register-owner', authLimiter, upload.fields([
   { name: 'governmentId', maxCount: 1 },
   { name: 'propertyProof', maxCount: 1 },
   { name: 'businessRegistration', maxCount: 1 },
-]), async (req: Request, res: Response) => {
+]), validate({
+  email: { required: true, type: 'string' },
+  password: { required: true, type: 'string', minLength: 8 },
+  name: { required: true, type: 'string', minLength: 2 },
+  phone: { required: true, type: 'string' },
+}), async (req: Request, res: Response) => {
   try {
     const { email, password, name, phone } = req.body;
-
-    if (!email || !password || !name || !phone) {
-      res.status(400).json({
-        success: false,
-        error: 'Please provide all required fields',
-        code: 'VALIDATION_ERROR',
-      });
-      return;
-    }
 
     // Check if user already exists
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
-      res.status(400).json({
-        success: false,
-        error: 'Email already registered',
-        code: 'DUPLICATE',
-      });
+      sendError(res, 'Email already registered', 400, 'DUPLICATE');
       return;
     }
 
@@ -267,27 +203,19 @@ router.post('/register-owner', authLimiter, upload.fields([
 
     const token = generateToken(user._id.toString());
 
-    res.status(201).json({
-      success: true,
-      data: {
-        user: {
-          _id: user._id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          ownerVerification: user.ownerVerification,
-        },
-        token,
+    sendSuccess(res, {
+      user: {
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+        ownerVerification: user.ownerVerification,
       },
-      message: 'Owner registration successful. Pending admin verification.',
-    });
+      token,
+    }, 'Owner registration successful. Pending admin verification.', 201);
   } catch (error) {
     console.error('Owner registration error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error during registration',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error during registration', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -299,38 +227,27 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
     const user = await User.findById(req.user?._id);
 
     if (!user) {
-      res.status(404).json({
-        success: false,
-        error: 'User not found',
-        code: 'NOT_FOUND',
-      });
+      sendError(res, 'User not found', 404, 'NOT_FOUND');
       return;
     }
 
-    res.json({
-      success: true,
-      data: {
-        _id: user._id,
-        email: user.email,
-        name: user.name,
-        phone: user.phone,
-        role: user.role,
-        college: user.college,
-        studentId: user.studentId,
-        isVerified: user.isVerified,
-        isBanned: user.isBanned,
-        profilePhoto: user.profilePhoto,
-        ownerVerification: user.ownerVerification,
-        createdAt: user.createdAt,
-      },
+    sendSuccess(res, {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+      phone: user.phone,
+      role: user.role,
+      college: user.college,
+      studentId: user.studentId,
+      isVerified: user.isVerified,
+      isBanned: user.isBanned,
+      profilePhoto: user.profilePhoto,
+      ownerVerification: user.ownerVerification,
+      createdAt: user.createdAt,
     });
   } catch (error) {
     console.error('Get profile error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 
@@ -342,29 +259,18 @@ router.get('/owner/verification-status', authMiddleware, async (req: AuthRequest
     const user = await User.findById(req.user?._id).select('ownerVerification role');
 
     if (!user || user.role !== 'owner') {
-      res.status(400).json({
-        success: false,
-        error: 'Not an owner account',
-        code: 'VALIDATION_ERROR',
-      });
+      sendError(res, 'Not an owner account', 400, 'VALIDATION_ERROR');
       return;
     }
 
-    res.json({
-      success: true,
-      data: {
-        status: user.ownerVerification.status,
-        rejectionReason: user.ownerVerification.rejectionReason,
-        verifiedAt: user.ownerVerification.verifiedAt,
-      },
+    sendSuccess(res, {
+      status: user.ownerVerification.status,
+      rejectionReason: user.ownerVerification.rejectionReason,
+      verifiedAt: user.ownerVerification.verifiedAt,
     });
   } catch (error) {
     console.error('Get verification status error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Server error',
-      code: 'DATABASE_ERROR',
-    });
+    sendError(res, 'Server error', 500, 'DATABASE_ERROR');
   }
 });
 

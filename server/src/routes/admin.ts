@@ -47,7 +47,7 @@ router.get('/stats', async (req: AuthRequest, res: Response) => {
     const aiStats = await VerificationResult.aggregate([
       {
         $group: {
-          _id: { model: '$model', verdict: '$verdict' },
+          _id: { model: '$modelName', verdict: '$verdict' },
           count: { $sum: 1 },
           avgConfidence: { $avg: '$confidence' },
         },
@@ -422,7 +422,7 @@ router.get('/ai-performance', async (req: AuthRequest, res: Response) => {
     const performance = await VerificationResult.aggregate([
       {
         $group: {
-          _id: '$model',
+          _id: '$modelName',
           totalVerifications: { $sum: 1 },
           avgConfidence: { $avg: '$confidence' },
           avgProcessingTime: { $avg: '$processingTime' },
