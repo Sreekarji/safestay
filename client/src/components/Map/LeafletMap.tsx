@@ -128,9 +128,9 @@ export default function LeafletMap({ selectedMonth, selectedMarker, onMarkerSele
 
   const filtered = markersWithScore.filter((m) => {
     if (filter === 'all') return true;
-    if (filter === 'high') return m.currentSSI >= 80;
-    if (filter === 'medium') return m.currentSSI >= 60 && m.currentSSI < 80;
-    return m.currentSSI < 60;
+    if (filter === 'high') return m.currentSSI >= 70;
+    if (filter === 'medium') return m.currentSSI >= 40 && m.currentSSI < 70;
+    return m.currentSSI < 40;
   });
 
   // Search: match name, area, type, or SSI label
@@ -273,7 +273,7 @@ export default function LeafletMap({ selectedMonth, selectedMarker, onMarkerSele
                   : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              {f === 'all' ? 'All' : f === 'high' ? 'Safe (80+)' : f === 'medium' ? 'Moderate (60-79)' : 'Risky (<60)'}
+              {f === 'all' ? 'All' : f === 'high' ? 'Safe (70+)' : f === 'medium' ? 'Moderate (40-69)' : 'Risky (<40)'}
             </button>
           ))}
           <span className="text-xs text-slate-400 ml-2">{filtered.length} locations</span>

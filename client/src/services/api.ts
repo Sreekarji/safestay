@@ -221,9 +221,9 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
       totalReports: DEMO_MARKERS.reduce((s, m) => s + m.totalReports, 0),
       verifiedReports: DEMO_MARKERS.reduce((s, m) => s + Math.round(m.totalReports * 0.6), 0),
       averageSSI: Math.round(avg),
-      highRiskCount: DEMO_MARKERS.filter((m) => m.ssi >= 80).length,
-      mediumRiskCount: DEMO_MARKERS.filter((m) => m.ssi >= 60 && m.ssi < 80).length,
-      lowRiskCount: DEMO_MARKERS.filter((m) => m.ssi < 60).length,
+      highRiskCount: DEMO_MARKERS.filter((m) => m.ssi < 40).length,
+      mediumRiskCount: DEMO_MARKERS.filter((m) => m.ssi >= 40 && m.ssi < 70).length,
+      lowRiskCount: DEMO_MARKERS.filter((m) => m.ssi >= 70).length,
     };
   }
 }

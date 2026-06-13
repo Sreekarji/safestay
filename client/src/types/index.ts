@@ -138,8 +138,8 @@ export interface RecentReport {
 export type SSILevel = 'high' | 'medium' | 'low';
 
 export function getSSILevel(ssi: number): SSILevel {
-  if (ssi >= 80) return 'high';
-  if (ssi >= 60) return 'medium';
+  if (ssi >= 70) return 'high';
+  if (ssi >= 40) return 'medium';
   return 'low';
 }
 
