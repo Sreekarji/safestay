@@ -97,14 +97,14 @@ function groupByArea(markers: MarkerData[]): AreaGroup[] {
     .sort((a, b) => b.markers.length - a.markers.length);
 }
 
-// ── Rich Popup Content ─────────────────────────────────────────
+// ── Rich Popup Content (matching old map style) ────────────────
 function MarkerPopupContent({ marker }: { marker: MarkerData }) {
   const navigate = useNavigate();
   const color = getSSIColor(marker.ssi);
   const label = getSSILabel(marker.ssi);
 
   return (
-    <div style={{ padding: '4px', fontFamily: 'Inter, sans-serif', minWidth: '220px' }}>
+    <div style={{ padding: '4px', fontFamily: 'Inter, sans-serif', minWidth: '260px', maxWidth: '300px' }}>
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <div>
@@ -270,7 +270,7 @@ export function SafetyMap({ filters, onMarkerSelect, selectedMarker }: Props) {
   return (
     <div className="relative h-full w-full">
       {/* Search bar */}
-      <div ref={searchRef} className="absolute top-4 left-4 z-[1001] w-80">
+      <div ref={searchRef} className="absolute top-4 left-80 z-[1001] w-80">
         <div className="relative">
           <svg
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none"
@@ -398,7 +398,7 @@ export function SafetyMap({ filters, onMarkerSelect, selectedMarker }: Props) {
       </div>
 
       {/* Filter bar */}
-      <div className="absolute top-4 left-[340px] z-[1000] flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-200 shadow-lg transition-colors">
+      <div className="absolute top-4 left-[448px] z-[1000] flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-xl px-4 py-2.5 border border-slate-200 shadow-lg transition-colors">
         <span className="text-xs text-slate-400 font-medium mr-1">Filter:</span>
         {(['all', 'high', 'medium', 'low'] as const).map((f) => (
           <button

@@ -52,7 +52,7 @@ export function MapView() {
   return (
     <div className="relative" style={{ height: 'calc(100vh - 64px)' }}>
       {/* Sidebar toggle */}
-      <div className="absolute top-4 right-4 z-[1002]">
+      <div className="absolute top-4 left-4 z-[1002]">
         <button
           onClick={() => setShowSidebar(!showSidebar)}
           className="h-10 w-10 rounded-lg bg-white border border-slate-200 shadow-sm flex items-center justify-center hover:bg-slate-50 transition-colors"
