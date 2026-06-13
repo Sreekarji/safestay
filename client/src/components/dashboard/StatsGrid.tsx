@@ -13,10 +13,16 @@ import { Card, CardContent } from '@/components/ui/card'
 interface StatsGridProps {
   stats: {
     totalReports: number
-    pending: number
-    verified: number
-    resolved: number
+    pending?: number
+    verified?: number
+    resolved?: number
     weeklyTrend?: number
+    totalAccommodations?: number
+    verifiedReports?: number
+    averageSSI?: number
+    highRiskCount?: number
+    mediumRiskCount?: number
+    lowRiskCount?: number
   }
 }
 

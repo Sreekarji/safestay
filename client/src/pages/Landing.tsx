@@ -39,7 +39,7 @@ export function Landing() {
               <p className="mt-6 text-lg text-primary-100 max-w-lg">{t('landing.heroSub')}</p>
               <div className="mt-8 flex flex-wrap gap-4">
                 <Link to="/register"><Button size="lg" className="bg-white text-primary-700 hover:bg-primary-50 shadow-lg">{t('landing.getStarted')} <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
-                <Link to="/map"><Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10">{t('landing.viewMap')}</Button></Link>
+                <Link to="/map"><Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10">{t('landing.viewMap')}</Button></Link>
               </div>
             </motion.div>
             <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }} className="flex justify-center">

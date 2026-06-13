@@ -111,7 +111,6 @@ const reportSchema = new Schema<IReport>({
     type: String,
     enum: ['pending', 'ai_verified', 'approved', 'resolved', 'verified', 'disputed', 'rejected'],
     default: 'pending',
-    index: true,
   },
 
   // AI Verification

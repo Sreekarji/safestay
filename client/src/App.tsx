@@ -9,7 +9,9 @@ import { OTPVerificationPage } from '@/pages/OTPVerification';
 import { Dashboard } from '@/pages/Dashboard';
 import { ReportSubmit } from '@/pages/ReportSubmit';
 import { ReportDetail } from '@/pages/ReportDetail';
-import { MapView } from '@/pages/MapView';
+import MapView from '@/pages/MapView';
+import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard';
+import MapTest from '@/components/map/MapTest';
 import { NotFound } from '@/pages/NotFound';
 import { useAuthStore } from '@/stores/authStore';
 
@@ -31,6 +33,8 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/verify-otp" element={<OTPVerificationPage />} />
             <Route path="/map" element={<MapView />} />
+            <Route path="/analytics" element={<AnalyticsDashboard />} />
+            <Route path="/map-test" element={<MapTest />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/report/new" element={<ProtectedRoute><ReportSubmit /></ProtectedRoute>} />
             <Route path="/report/:id" element={<ProtectedRoute><ReportDetail /></ProtectedRoute>} />

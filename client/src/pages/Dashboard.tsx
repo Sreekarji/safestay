@@ -75,7 +75,7 @@ export function Dashboard() {
         </div>
       </motion.div>
       <div className="space-y-6">
-        <StatsGrid stats={stats || { totalReports: 0, pending: 0, verified: 0, resolved: 0 }} />
+        <StatsGrid stats={stats || { totalAccommodations: 0, totalReports: 0, verifiedReports: 0, averageSSI: 0, highRiskCount: 0, mediumRiskCount: 0, lowRiskCount: 0 }} />
         <div className="grid gap-6 lg:grid-cols-2">
           <RiskChart />
           <CategoryBreakdown />
