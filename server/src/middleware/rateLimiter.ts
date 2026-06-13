@@ -26,10 +26,10 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Report submission rate limiter: 10 requests per hour
+// Report submission rate limiter: 50 requests per hour
 export const reportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 10,
+  max: 50,
   message: {
     success: false,
     error: 'Too many report submissions. Please try again later.',
