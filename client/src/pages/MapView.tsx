@@ -1,7 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, AnimatePresence } from 'framer-motion';
-import { List, X, Clock, Navigation, GitCompareArrows } from 'lucide-react';
+import { Clock, Navigation, GitCompareArrows } from 'lucide-react';
 import SafetyMap, { triggerAreaZoom, type MapMode } from '@/components/map/SafetyMap';
 import SearchBar from '@/components/map/SearchBar';
 import FilterBar from '@/components/map/FilterBar';
@@ -27,7 +26,6 @@ export default function MapView() {
   const [filter, setFilter] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
-  const [showNavSidebar, setShowNavSidebar] = useState(true);
 
   // Route mode state
   const [accommodationId, setAccommodationId] = useState<string | null>(null);
@@ -68,12 +66,6 @@ export default function MapView() {
     return getRouteComparison(comparisonAccId, accommodationId ?? '', collegeId);
   }, [routeComparisonMode, comparisonAccId, collegeId, accommodationId]);
 
-  // Search in sidebar
-  const sidebarFiltered = markers.filter((m) =>
-    m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    m.area.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
   // Error state
   if (dataError && markers.length === 0) {
     return (
@@ -95,12 +87,6 @@ export default function MapView() {
       <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/50 shrink-0 transition-colors relative z-20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {/* Nav sidebar toggle */}
-            <button onClick={() => setShowNavSidebar(!showNavSidebar)}
-              className="h-9 w-9 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center justify-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-              {showNavSidebar ? <X className="h-4 w-4 text-slate-600 dark:text-slate-300" /> : <List className="h-4 w-4 text-slate-600 dark:text-slate-300" />}
-            </button>
-
             {/* Mode toggle */}
             <div className="flex items-center bg-white dark:bg-slate-800 rounded-lg p-0.5 border border-slate-200 dark:border-slate-700/50">
               <button onClick={() => setMode('timeline')}
@@ -142,40 +128,6 @@ export default function MapView() {
 
       {/* ── Main content ───────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden min-h-0">
-        {/* Navigation sidebar */}
-        <AnimatePresence>
-          {showNavSidebar && (
-            <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 280, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }} className="h-full border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 overflow-y-auto shrink-0 transition-colors">
-              <div className="p-4 w-[280px]">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Accommodations</h3>
-                <div className="space-y-2">
-                  {dataLoading && <p className="text-sm text-slate-400">Loading...</p>}
-                  {!dataLoading && sidebarFiltered.length === 0 && <p className="text-sm text-slate-400">No accommodations found</p>}
-                  {sidebarFiltered.map((acc) => (
-                    <div key={acc.id}
-                      onClick={() => { setSelectedMarker(acc); }}
-                      className={`p-3 rounded-lg cursor-pointer hover:shadow-md transition-all border ${
-                        selectedMarker?.id === acc.id ? 'border-blue-500 bg-blue-50 dark:bg-blue-500/10' : 'border-slate-200 dark:border-slate-700/50 bg-white dark:bg-slate-800/50'
-                      }`}>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-white">{acc.name}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400">{acc.area} · {acc.type}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold" style={{ color: getSSIColor(acc.currentSSI ?? acc.ssi) }}>{acc.currentSSI ?? acc.ssi}</p>
-                          <p className="text-xs text-slate-400">{getSSILabel(acc.currentSSI ?? acc.ssi)}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Map + controls */}
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           <div className="flex-1 min-h-0 relative">
@@ -250,6 +202,3 @@ export default function MapView() {
     </div>
   );
 }
-
-// Import for sidebar
-import { getSSIColor, getSSILabel } from '@/lib/utils';
