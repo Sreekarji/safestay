@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Shield } from 'lucide-react';
 import { OTPVerification as OTPForm } from '@/components/auth/OTPVerification';
 import { useAuthStore } from '@/stores/authStore';
+import { authService } from '@/services/authService';
 import toast from 'react-hot-toast';
 
 export function OTPVerificationPage() {
@@ -18,7 +19,20 @@ export function OTPVerificationPage() {
             <div className="flex justify-center mb-3"><Shield className="h-10 w-10 text-primary-600" /></div>
             <h1 className="text-2xl font-bold text-slate-900">{t('auth.verifyYourEmail')}</h1>
           </div>
-          <OTPForm onSubmit={async () => { toast.success('Verified!'); navigate('/dashboard'); }} onResend={() => toast.success('OTP resent')} loading={loading} email={user?.email} />
+          <OTPForm
+            onSubmit={async (otp: string) => {
+              try {
+                await authService.verifyOTP({ email: user?.email || '', otp });
+                toast.success('Email verified!');
+                navigate('/dashboard');
+              } catch (err: any) {
+                toast.error(err.message || 'Verification failed');
+              }
+            }}
+            onResend={() => toast.success('OTP resent')}
+            loading={loading}
+            email={user?.email}
+          />
         </div>
       </motion.div>
     </div>

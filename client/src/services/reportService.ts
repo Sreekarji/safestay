@@ -3,9 +3,7 @@ import type { Report, QueryParams } from '@/types';
 
 export const reportService = {
   async createReport(formData: FormData) {
-    const response = await api.post('/reports', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post('/reports', formData);
     return response.data as Report;
   },
 

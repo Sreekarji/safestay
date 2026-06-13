@@ -22,3 +22,35 @@ api.interceptors.response.use((response: any) => response, (error: any) => {
 });
 
 export default api;
+
+// Map fetch function
+export async function fetchMapMarkersWithHistory() {
+  const { data } = await api.get('/map/markers/history');
+  return data.markers ?? data;
+}
+
+// Dashboard fetch functions
+export async function fetchDashboardStats() {
+  const { data } = await api.get('/analytics/dashboard');
+  return data;
+}
+
+export async function fetchSSITrend() {
+  const { data } = await api.get('/analytics/ssi-trend');
+  return data.trend ?? data;
+}
+
+export async function fetchAreaRisks() {
+  const { data } = await api.get('/analytics/area-risk');
+  return data.areas ?? data;
+}
+
+export async function fetchCategoryBreakdown() {
+  const { data } = await api.get('/analytics/categories');
+  return data.categories ?? data;
+}
+
+export async function fetchRecentReports() {
+  const { data } = await api.get('/reports?limit=10&sort=-createdAt');
+  return data.reports ?? data;
+}
