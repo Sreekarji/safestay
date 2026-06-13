@@ -78,18 +78,18 @@ export interface Language {
 }
 
 export interface LoginData {
-  email: string;
-  password: string;
+  email?: string;
+  password?: string;
 }
 
 export interface RegisterData {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  confirmPassword: string;
-  role: 'student' | 'owner';
-  terms: boolean;
+  name?: string;
+  email?: string;
+  phone?: string;
+  password?: string;
+  confirmPassword?: string;
+  role?: 'student' | 'owner';
+  terms?: boolean;
 }
 
 export interface OTPData {
@@ -122,39 +122,61 @@ export interface MapMarkerWithHistory extends MapMarker {
 export interface RouteLocation {
   id: string;
   name: string;
-  lat: number;
-  lng: number;
-  type: 'accommodation' | 'college';
+  lat?: number;
+  lng?: number;
+  latitude: number;
+  longitude: number;
+  area: string;
+  type?: 'accommodation' | 'college';
 }
 
 export interface RoutePoint {
   lat: number;
   lng: number;
-  ssi: number;
+  ssi?: number;
+  safetyScore?: number;
 }
 
 export interface RiskHotspot {
-  lat: number;
-  lng: number;
+  id?: string;
+  lat?: number;
+  lng?: number;
+  latitude?: number;
+  longitude?: number;
   severity: number;
-  description: string;
+  description?: string;
+  label?: string;
+  type?: string;
+  reportCount?: number;
+  lastReported?: string;
 }
 
 export interface RouteIntelligence {
-  id: string;
-  name: string;
-  points: RoutePoint[];
-  score: number;
-  distance: number;
-  duration: number;
-  nightSafety: number;
+  id?: string;
+  routeId?: string;
+  name?: string;
+  points?: RoutePoint[];
+  score?: number;
+  distance: string;
+  duration?: number;
+  nightSafety?: number;
   hotspots: RiskHotspot[];
+  accommodationName: string;
+  collegeName: string;
+  safetyScore: number;
+  riskLevel: string;
+  travelTime: string;
+  nightSafetyRating: number;
+  recommendation?: string;
+  aiSummary?: string;
+  routePoints: RoutePoint[];
 }
 
 export interface RouteComparison {
   routeA: RouteIntelligence;
   routeB: RouteIntelligence;
-  recommendation: string;
+  recommendation?: string;
+  aiRecommendation: string;
 }
 
 export interface AISummary {
