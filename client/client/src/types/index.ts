@@ -25,7 +25,6 @@ export type ReportCategory =
   | 'fire_safety'
   | 'hygiene'
   | 'electricity'
-  | 'electrical'
   | 'water'
   | 'water_quality'
   | 'structural'
@@ -114,7 +113,6 @@ export interface Accommodation {
     latitude: number;
     longitude: number;
     address?: string;
-    coordinates?: number[];
   };
   createdAt: string;
   updatedAt: string;
@@ -145,16 +143,15 @@ export interface MapMarkerWithHistory extends MapMarker {
 
 // ── Dashboard Analytics ───────────────────────────────────────
 export interface DashboardStats {
-  totalAccommodations?: number;
-  totalReports?: number;
-  verifiedReports?: number;
-  averageSSI?: number;
-  highRiskCount?: number;
-  mediumRiskCount?: number;
-  lowRiskCount?: number;
+  totalAccommodations: number;
+  totalReports: number;
+  verifiedReports: number;
+  averageSSI: number;
+  highRiskCount: number;
+  mediumRiskCount: number;
+  lowRiskCount: number;
   pending?: number;
   resolved?: number;
-  verified?: number;
 }
 
 export interface SSITrend {
@@ -292,7 +289,6 @@ export const CATEGORY_LABELS: Record<ReportCategory, string> = {
   fire_safety: 'Fire Safety',
   hygiene: 'Hygiene',
   electricity: 'Electricity',
-  electrical: 'Electrical',
   water: 'Water Supply',
   water_quality: 'Water Quality',
   structural: 'Structural',
@@ -309,7 +305,6 @@ export const CATEGORY_ICONS: Record<ReportCategory, string> = {
   fire_safety: '🔥',
   hygiene: '🧹',
   electricity: '⚡',
-  electrical: '⚡',
   water: '💧',
   water_quality: '💧',
   structural: '🏗️',

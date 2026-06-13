@@ -6,7 +6,11 @@
     "myReports": "My Reports",
     "settings": "Settings",
     "logout": "Logout",
-    "profile": "Profile"
+    "profile": "Profile",
+    "ownerDashboard": "Owner Dashboard",
+    "addProperty": "Add Property",
+    "adminDashboard": "Admin Dashboard",
+    "accommodations": "Accommodations"
   },
   "auth": {
     "login": "Login",

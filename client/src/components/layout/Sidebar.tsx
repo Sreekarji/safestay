@@ -7,9 +7,9 @@ import { Avatar } from '@/components/ui/avatar';
 const sidebarItems = [
   { to: '/dashboard', icon: LayoutDashboard, labelKey: 'nav.dashboard' },
   { to: '/map', icon: Map, labelKey: 'nav.map' },
-  { to: '/report/new', icon: FileText, labelKey: 'nav.report' },
-  { to: '/dashboard', icon: ClipboardList, labelKey: 'nav.myReports' },
-  { to: '/dashboard', icon: Settings, labelKey: 'nav.settings' },
+  { to: '/report-incident', icon: FileText, labelKey: 'nav.report' },
+  { to: '/my-reports', icon: ClipboardList, labelKey: 'nav.myReports' },
+  { to: '/profile', icon: Settings, labelKey: 'nav.settings' },
 ];
 
 export function Sidebar() {

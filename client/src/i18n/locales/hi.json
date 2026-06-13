@@ -6,7 +6,11 @@
     "myReports": "मेरी रिपोर्ट",
     "settings": "सेटिंग्स",
     "logout": "लॉग आउट",
-    "profile": "प्रोफ़ाइल"
+    "profile": "प्रोफ़ाइल",
+    "ownerDashboard": "मालिक डैशबोर्ड",
+    "addProperty": "संपत्ति जोड़ें",
+    "adminDashboard": "एडमिन डैशबोर्ड",
+    "accommodations": "आवास"
   },
   "auth": {
     "login": "लॉगिन",

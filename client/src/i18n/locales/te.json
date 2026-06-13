@@ -6,7 +6,11 @@
     "myReports": "నా నివేదికలు",
     "settings": "సెట్టింగ్‌లు",
     "logout": "లాగ్ అవుట్",
-    "profile": "ప్రొఫైల్"
+    "profile": "ప్రొఫైల్",
+    "ownerDashboard": "యజమాని డాష్‌బోర్డ్",
+    "addProperty": "ఆస్తి జోడించండి",
+    "adminDashboard": "అడ్మిన్ డాష్‌బోర్డ్",
+    "accommodations": "వసతి"
   },
   "auth": {
     "login": "లాగిన్",
