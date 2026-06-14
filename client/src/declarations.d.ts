@@ -1,28 +1,45 @@
-declare module 'framer-motion' {
-  export const motion: any;
-  export const AnimatePresence: any;
+declare module '*.png' {
+  const src: string;
+  export default src;
 }
 
-declare module 'react-hook-form' {
-  export function useForm<T extends Record<string, any> = Record<string, any>>(props?: any): {
-    register: any;
-    handleSubmit: any;
-    control: any;
-    formState: { errors: any; isSubmitting: boolean };
-    watch: any;
-    setValue: any;
-    reset: any;
-    trigger: any;
-    getValues: any;
-  };
-  export const Controller: any;
+declare module '*.jpg' {
+  const src: string;
+  export default src;
 }
 
-declare module '@hookform/resolvers/zod' {
-  export function zodResolver(schema: any): any;
+declare module '*.jpeg' {
+  const src: string;
+  export default src;
 }
 
-declare module 'axios' {
-  const axios: any;
-  export default axios;
+declare module '*.gif' {
+  const src: string;
+  export default src;
+}
+
+declare module '*.webp' {
+  const src: string;
+  export default src;
+}
+
+declare module '*.svg' {
+  import type { FC, SVGProps } from 'react';
+  const ReactComponent: FC<SVGProps<SVGSVGElement>>;
+  export default ReactComponent;
+}
+
+declare module '*.css' {
+  const classes: { [key: string]: string };
+  export default classes;
+}
+
+declare module '*.module.css' {
+  const classes: { [key: string]: string };
+  export default classes;
+}
+
+declare module '*.module.scss' {
+  const classes: { [key: string]: string };
+  export default classes;
 }

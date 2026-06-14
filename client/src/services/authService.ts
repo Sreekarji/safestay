@@ -26,4 +26,43 @@ export const authService = {
     const response = await api.post('/otp/send-verification', { email });
     return response.data;
   },
+
+  async registerOwner(formData: FormData) {
+    const response = await api.post('/auth/register-owner', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  async forgotPassword(email: string) {
+    const response = await api.post('/otp/send-reset', { email });
+    return response.data;
+  },
+
+  async verifyResetOTP(email: string, otp: string) {
+    const response = await api.post('/otp/verify-reset', { email, otp });
+    return response.data;
+  },
+
+  async resetPassword(email: string, otp: string, newPassword: string) {
+    const response = await api.post('/auth/reset-password', { email, otp, newPassword });
+    return response.data;
+  },
+
+  async updateProfile(data: { name: string; email: string; phone?: string }) {
+    const response = await api.put('/auth/profile', data);
+    return response.data;
+  },
+
+  async changePassword(data: { currentPassword: string; newPassword: string }) {
+    const response = await api.put('/auth/change-password', data);
+    return response.data;
+  },
+
+  async uploadProfilePhoto(formData: FormData) {
+    const response = await api.post('/auth/profile-photo', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
 };

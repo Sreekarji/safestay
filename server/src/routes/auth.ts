@@ -164,7 +164,7 @@ router.post('/register-owner', authLimiter, upload.fields([
     }
 
     // Upload documents to Cloudinary
-    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const files = (req.files || {}) as { [fieldname: string]: Express.Multer.File[] };
     const uploadPromises: Promise<string>[] = [];
 
     for (const field of ['governmentId', 'propertyProof', 'businessRegistration']) {
@@ -180,7 +180,13 @@ router.post('/register-owner', authLimiter, upload.fields([
       }
     }
 
-    const uploadedUrls = await Promise.all(uploadPromises);
+    let uploadedUrls: string[] = [];
+    try {
+      uploadedUrls = await Promise.all(uploadPromises);
+    } catch (uploadErr) {
+      console.error('Document upload failed (non-blocking):', uploadErr);
+      // Continue registration without documents
+    }
 
     // Create owner user
     const user = new User({

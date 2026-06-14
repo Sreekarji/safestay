@@ -1,3 +1,4 @@
+// ── User ──────────────────────────────────────────────────────
 export interface User {
   _id: string;
   name: string;
@@ -17,12 +18,31 @@ export interface User {
   createdAt?: string;
 }
 
+// ── Report ────────────────────────────────────────────────────
+export type ReportCategory =
+  | 'theft'
+  | 'harassment'
+  | 'fire_safety'
+  | 'hygiene'
+  | 'electricity'
+  | 'electrical'
+  | 'water'
+  | 'water_quality'
+  | 'structural'
+  | 'security'
+  | 'noise'
+  | 'infrastructure'
+  | 'food_safety'
+  | 'other';
+
+export type ReportStatus = 'pending' | 'verified' | 'disputed' | 'resolved' | 'ai_verified' | 'approved' | 'rejected';
+
 export interface Report {
   _id: string;
   title: string;
   description: string;
   category: ReportCategory;
-  severity: number; // 1-10 numeric
+  severity: number;
   status: ReportStatus;
   accommodationId: Accommodation | string;
   userId: User | string;
@@ -52,119 +72,67 @@ export interface Report {
     status: 'pending' | 'accepted' | 'rejected';
   };
   upvotes: number;
-  upvotedBy: string[];
+  upvotesBy: string[];
   isAnonymous: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
-// Component-facing AI verdict (used by AIVerdict.tsx)
-export interface AIVerdict {
-  model: string;
-  verdict: 'authentic' | 'suspicious' | 'fake';
-  confidence: number;
-  analysis: string;
-  audioUrl?: string;
-}
-
-// Backend AI verification result
 export interface AIVerdictResult {
   verdict: 'accept' | 'reject' | 'uncertain';
-  confidence: number; // 0-1
+  confidence: number;
   reasoning: string;
 }
 
-export type ReportCategory = 'fire_safety' | 'water_quality' | 'structural' | 'electrical' | 'hygiene' | 'security' | 'food_safety' | 'other';
-export type ReportStatus = 'pending' | 'ai_verified' | 'approved' | 'resolved' | 'verified' | 'disputed' | 'rejected';
-
+// ── Accommodation ─────────────────────────────────────────────
 export interface Accommodation {
   _id: string;
   name: string;
-  type?: string;
+  type: 'pg' | 'hostel' | 'apartment' | 'other';
   address: string;
   area: string;
-  city?: string;
-  state?: string;
-  pincode?: string;
+  city: string;
+  latitude: number;
+  longitude: number;
   ssi: number;
-  ssiHistory?: { score: number; date: string; reportCount: number }[];
-  categoryScores?: Record<string, number>;
-  reportCount: number;
-  verifiedReportCount?: number;
+  totalReports: number;
+  verifiedReports: number;
+  ownerName?: string;
+  ownerContact?: string;
+  ownerId?: string | User;
+  contactPhone?: string;
+  contactEmail?: string;
+  images: string[];
+  description?: string;
+  monthlyRent?: number;
   amenities?: string[];
   capacity?: number;
   currentOccupancy?: number;
-  monthlyRent?: number;
-  contactPhone?: string;
-  contactEmail?: string;
-  images?: string[];
-  ownerId?: string;
-  isActive?: boolean;
+  reportCount?: number;
+  categoryScores?: Record<string, number>;
   location?: {
-    type: 'Point';
-    coordinates: [number, number]; // [lng, lat]
+    latitude: number;
+    longitude: number;
+    address?: string;
+    coordinates?: number[];
   };
-  riskLevel?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
+// ── Map Marker ────────────────────────────────────────────────
 export interface MapMarker {
   id: string;
   name: string;
-  area: string;
-  coordinates: { lat: number; lng: number };
+  latitude: number;
+  longitude: number;
   ssi: number;
-  reportCount: number;
-  accommodation: string;
-  riskLevel?: string;
-}
-
-export interface DashboardStats {
+  area: string;
+  type: 'pg' | 'hostel' | 'apartment';
   totalReports: number;
-  pending: number;
-  verified: number;
-  resolved: number;
-  weeklyTrend?: number;
 }
 
-export interface Language {
-  code: 'en' | 'te' | 'hi';
-  name: string;
-  flag: string;
-}
-
-export interface LoginData {
-  email: string;
-  password: string;
-}
-
-export interface RegisterData {
-  name: string;
-  email: string;
-  phone: string;
-  password: string;
-  confirmPassword?: string;
-  role?: 'student' | 'owner';
-  college?: string;
-  studentId?: string;
-}
-
-export interface OTPData {
-  otp: string;
-  email: string;
-}
-
-export interface QueryParams {
-  page?: number;
-  limit?: number;
-  category?: ReportCategory;
-  severity?: number;
-  status?: ReportStatus;
-  search?: string;
-}
-
-// Map & Route types
-export type SSILevel = 'high' | 'medium' | 'low';
-
+// ── Historical SSI ────────────────────────────────────────────
 export interface SSIMonthly {
   month: string;
   score: number;
@@ -175,78 +143,81 @@ export interface MapMarkerWithHistory extends MapMarker {
   currentSSI?: number;
 }
 
-export interface RouteLocation {
-  id: string;
-  name: string;
-  lat?: number;
-  lng?: number;
-  latitude: number;
-  longitude: number;
+// ── Dashboard Analytics ───────────────────────────────────────
+export interface DashboardStats {
+  totalAccommodations?: number;
+  totalReports?: number;
+  verifiedReports?: number;
+  averageSSI?: number;
+  highRiskCount?: number;
+  mediumRiskCount?: number;
+  lowRiskCount?: number;
+  pending?: number;
+  resolved?: number;
+  verified?: number;
+}
+
+export interface SSITrend {
+  date: string;
+  averageSSI: number;
+  reportsCount: number;
+}
+
+export interface AreaRisk {
   area: string;
-  type?: 'accommodation' | 'college';
+  averageSSI: number;
+  reportCount: number;
+  accommodations: number;
 }
 
-export interface RoutePoint {
-  lat: number;
-  lng: number;
-  ssi?: number;
-  safetyScore?: number;
+export type CategoryBreakdown = {
+  category: ReportCategory;
+  count: number;
+  percentage: number;
 }
 
-export interface RiskHotspot {
-  id?: string;
-  lat?: number;
-  lng?: number;
-  latitude?: number;
-  longitude?: number;
-  severity: number;
-  description?: string;
-  label?: string;
-  type?: string;
-  reportCount?: number;
-  lastReported?: string;
-}
-
-export interface RouteIntelligence {
-  id?: string;
-  routeId?: string;
-  name?: string;
-  points?: RoutePoint[];
-  score?: number;
-  distance: string;
-  duration?: number;
-  nightSafety?: number;
-  hotspots: RiskHotspot[];
+export interface RecentReport {
+  id: string;
   accommodationName: string;
-  collegeName: string;
-  safetyScore: number;
-  riskLevel: string;
-  travelTime: string;
-  nightSafetyRating: number;
-  recommendation?: string;
-  aiSummary?: string;
-  routePoints: RoutePoint[];
-}
-
-export interface RouteComparison {
-  routeA: RouteIntelligence;
-  routeB: RouteIntelligence;
-  recommendation?: string;
-  aiRecommendation: string;
+  area: string;
+  category: ReportCategory;
+  severity: number;
+  status: ReportStatus;
+  date: string;
 }
 
 export interface AISummary {
-  trend: 'improving' | 'stable' | 'declining';
-  riskLevel: 'safe' | 'moderate' | 'high-risk';
+  accommodationId: string;
   summary: string;
-  recommendation: string;
+  trend: 'improving' | 'declining' | 'stable';
+  riskLevel: 'safe' | 'moderate' | 'high-risk';
 }
 
+// ── Timeline ──────────────────────────────────────────────────
 export const TIMELINE_MONTHS = [
   '2025-01', '2025-02', '2025-03', '2025-04', '2025-05', '2025-06',
   '2025-07', '2025-08', '2025-09', '2025-10', '2025-11', '2025-12',
   '2026-01', '2026-02', '2026-03', '2026-04', '2026-05', '2026-06',
 ];
+
+export function formatMonth(month: string): string {
+  const [y, m] = month.split('-');
+  const date = new Date(Number(y), Number(m) - 1);
+  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+}
+
+export function getMonthIndex(month: string): number {
+  return TIMELINE_MONTHS.indexOf(month);
+}
+
+// ── SSI Helpers ───────────────────────────────────────────────
+export type SSILevel = 'high' | 'medium' | 'low';
+
+export function getSSILevel(ssi: number): SSILevel {
+  if (ssi >= 70) return 'high';
+  if (ssi >= 40) return 'medium';
+  return 'low';
+}
 
 export function getSSIColor(ssi: number): string {
   if (ssi >= 70) return '#22c55e';
@@ -267,12 +238,126 @@ export function getSSITrend(current: number, previous: number): { arrow: string;
   return { arrow: '→', label: 'Stable', color: '#f59e0b' };
 }
 
-export function formatMonth(month: string): string {
-  const [year, m] = month.split('-');
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${months[parseInt(m) - 1]} ${year}`;
+// ── Route Intelligence ────────────────────────────────────────
+export interface RouteLocation {
+  id: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  area: string;
 }
 
-export function getMonthIndex(month: string): number {
-  return TIMELINE_MONTHS.indexOf(month);
+export interface RoutePoint {
+  lat: number;
+  lng: number;
+  safetyScore: number;
+}
+
+export interface RiskHotspot {
+  id: string;
+  latitude: number;
+  longitude: number;
+  type: ReportCategory;
+  label: string;
+  reportCount: number;
+  severity: 1 | 2 | 3 | 4 | 5;
+  lastReported: string;
+}
+
+export interface RouteIntelligence {
+  routeId: string;
+  accommodationName: string;
+  collegeName: string;
+  routePoints: RoutePoint[];
+  hotspots: RiskHotspot[];
+  safetyScore: number;
+  riskLevel: 'safe' | 'moderate' | 'high-risk';
+  travelTime: string;
+  distance: string;
+  nightSafetyRating: number;
+  recommendation: string;
+  aiSummary: string;
+}
+
+export interface RouteComparison {
+  routeA: RouteIntelligence;
+  routeB: RouteIntelligence;
+  aiRecommendation: string;
+}
+
+// ── Category Labels & Icons ──────────────────────────────────
+export const CATEGORY_LABELS: Record<ReportCategory, string> = {
+  theft: 'Theft',
+  harassment: 'Harassment',
+  fire_safety: 'Fire Safety',
+  hygiene: 'Hygiene',
+  electricity: 'Electricity',
+  electrical: 'Electrical',
+  water: 'Water Supply',
+  water_quality: 'Water Quality',
+  structural: 'Structural',
+  security: 'Security',
+  noise: 'Noise',
+  infrastructure: 'Infrastructure',
+  food_safety: 'Food Safety',
+  other: 'Other',
+};
+
+export const CATEGORY_ICONS: Record<ReportCategory, string> = {
+  theft: '🔓',
+  harassment: '⚠️',
+  fire_safety: '🔥',
+  hygiene: '🧹',
+  electricity: '⚡',
+  electrical: '⚡',
+  water: '💧',
+  water_quality: '💧',
+  structural: '🏗️',
+  security: '🛡️',
+  noise: '🔊',
+  infrastructure: '🏗️',
+  food_safety: '🍽️',
+  other: '📋',
+};
+
+// ── Auth types ───────────────────────────────────────────────
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  name: string;
+  email: string;
+  phone?: string;
+  password: string;
+  confirmPassword?: string;
+  role?: 'student' | 'owner';
+  college?: string;
+  studentId?: string;
+  propertyName?: string;
+  propertiesManaged?: string;
+}
+
+export interface OTPData {
+  otp: string;
+  email: string;
+}
+
+export interface QueryParams {
+  page?: number;
+  limit?: number;
+  category?: ReportCategory;
+  severity?: number;
+  status?: ReportStatus;
+  search?: string;
+}
+
+// ── AI Verdict (component-facing) ────────────────────────────
+export interface AIVerdict {
+  model: string;
+  verdict: 'authentic' | 'suspicious' | 'fake';
+  confidence: number;
+  analysis: string;
+  audioUrl?: string;
 }

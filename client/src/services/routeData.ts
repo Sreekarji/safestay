@@ -8,32 +8,32 @@ import type {
 
 // ── College Locations ───────────────────────────────────────
 export const COLLEGES: RouteLocation[] = [
-  { id: 'c1', name: 'IIIT Hyderabad', latitude: 17.4435, longitude: 78.3476, area: 'Gachibowli' },
-  { id: 'c2', name: 'JNTU Hyderabad', latitude: 17.4943, longitude: 78.3926, area: 'Kukatpally' },
-  { id: 'c3', name: 'Osmania University', latitude: 17.4156, longitude: 78.5302, area: 'Amberpet' },
-  { id: 'c4', name: 'IIT Hyderabad', latitude: 17.5868, longitude: 78.1238, area: 'Kandi' },
-  { id: 'c5', name: 'CBIT', latitude: 17.4155, longitude: 78.3249, area: 'Gandipet' },
-  { id: 'c6', name: 'Vasavi College', latitude: 17.3890, longitude: 78.4790, area: 'LB Nagar' },
+  { id: 'col-1', name: 'IIIT Hyderabad', latitude: 17.4435, longitude: 78.3476, area: 'Gachibowli' },
+  { id: 'col-2', name: 'JNTU Hyderabad', latitude: 17.4943, longitude: 78.3926, area: 'Kukatpally' },
+  { id: 'col-3', name: 'Osmania University', latitude: 17.4156, longitude: 78.5302, area: 'Amberpet' },
+  { id: 'col-4', name: 'IIT Hyderabad', latitude: 17.5868, longitude: 78.1238, area: 'Kandi' },
+  { id: 'col-5', name: 'CBIT', latitude: 17.4155, longitude: 78.3249, area: 'Gandipet' },
+  { id: 'col-6', name: 'Vasavi College', latitude: 17.3890, longitude: 78.4790, area: 'LB Nagar' },
 ];
 
 // ── Accommodation Locations (from demo markers) ─────────────
 export const ACCOMMODATIONS: RouteLocation[] = [
-  { id: 'demo-1', name: 'Sunshine Ladies PG', latitude: 17.4486, longitude: 78.3908, area: 'Madhapur' },
-  { id: 'demo-2', name: 'Vertex Student Hostel', latitude: 17.4435, longitude: 78.3476, area: 'Hitech City' },
-  { id: 'demo-3', name: 'Green Valley Residency', latitude: 17.4400, longitude: 78.3488, area: 'Hitech City' },
-  { id: 'demo-4', name: 'SafeNest Boys PG', latitude: 17.4977, longitude: 78.3171, area: 'Kondapur' },
-  { id: 'demo-5', name: 'Rainbow Ladies Hostel', latitude: 17.4590, longitude: 78.3780, area: 'Gachibowli' },
-  { id: 'demo-6', name: 'City Nest PG', latitude: 17.4155, longitude: 78.3249, area: 'Ameerpet' },
-  { id: 'demo-7', name: 'Comfort Stay Hostel', latitude: 17.4849, longitude: 78.3013, area: 'Kukatpally' },
-  { id: 'demo-8', name: 'Student Inn', latitude: 17.4250, longitude: 78.3180, area: 'Ameerpet' },
-  { id: 'demo-9', name: 'Metro Homes PG', latitude: 17.4062, longitude: 78.4691, area: 'LB Nagar' },
-  { id: 'demo-10', name: 'Star View Residency', latitude: 17.4744, longitude: 78.3170, area: 'Kondapur' },
-  { id: 'demo-11', name: 'Budget Stay PG', latitude: 17.3967, longitude: 78.4863, area: 'Dilshuknagar' },
-  { id: 'demo-12', name: 'Lakshmi Ladies Hostel', latitude: 17.3833, longitude: 78.4011, area: 'Dilshuknagar' },
-  { id: 'demo-13', name: 'New York Residency', latitude: 17.4531, longitude: 78.2987, area: 'Kukatpally' },
-  { id: 'demo-14', name: 'Sri Sai Student Lodge', latitude: 17.3798, longitude: 78.4783, area: 'LB Nagar' },
-  { id: 'demo-15', name: 'RK Nagar PG', latitude: 17.4689, longitude: 78.3102, area: 'Kondapur' },
-  { id: 'demo-16', name: 'Sreekar Balgoni Ladies PG', latitude: 17.4333, longitude: 78.3333, area: 'Narsingi' },
+  { id: 'acc-1', name: 'Sunshine Ladies PG', latitude: 17.4486, longitude: 78.3908, area: 'Madhapur' },
+  { id: 'acc-2', name: 'Vertex Student Hostel', latitude: 17.4435, longitude: 78.3476, area: 'Hitech City' },
+  { id: 'acc-3', name: 'Green Valley Residency', latitude: 17.4400, longitude: 78.3488, area: 'Hitech City' },
+  { id: 'acc-4', name: 'SafeNest Boys PG', latitude: 17.4977, longitude: 78.3171, area: 'Kondapur' },
+  { id: 'acc-5', name: 'Rainbow Ladies Hostel', latitude: 17.4590, longitude: 78.3780, area: 'Gachibowli' },
+  { id: 'acc-6', name: 'City Nest PG', latitude: 17.4155, longitude: 78.3249, area: 'Ameerpet' },
+  { id: 'acc-7', name: 'Comfort Stay Hostel', latitude: 17.4849, longitude: 78.3013, area: 'Kukatpally' },
+  { id: 'acc-8', name: 'Student Inn', latitude: 17.4250, longitude: 78.3180, area: 'Ameerpet' },
+  { id: 'acc-9', name: 'Metro Homes PG', latitude: 17.4062, longitude: 78.4691, area: 'LB Nagar' },
+  { id: 'acc-10', name: 'Star View Residency', latitude: 17.4744, longitude: 78.3170, area: 'Kondapur' },
+  { id: 'acc-11', name: 'Budget Stay PG', latitude: 17.3967, longitude: 78.4863, area: 'Dilshuknagar' },
+  { id: 'acc-12', name: 'Lakshmi Ladies Hostel', latitude: 17.3833, longitude: 78.4011, area: 'Dilshuknagar' },
+  { id: 'acc-13', name: 'New York Residency', latitude: 17.4531, longitude: 78.2987, area: 'Kukatpally' },
+  { id: 'acc-14', name: 'Sri Sai Student Lodge', latitude: 17.3798, longitude: 78.4783, area: 'LB Nagar' },
+  { id: 'acc-15', name: 'RK Nagar PG', latitude: 17.4689, longitude: 78.3102, area: 'Kondapur' },
+  { id: 'acc-16', name: 'Sreekar Balgoni Ladies PG', latitude: 17.4333, longitude: 78.3333, area: 'Narsingi' },
 ];
 
 // ── Interpolate route points between two locations ──────────
@@ -129,14 +129,14 @@ function calculateRouteIntelligence(
   const nightSafety = Math.max(30, minScore + 10);
 
   const recommendations = [
-    { level: 'safe', text: `Recommended route for all students. Well-lit corridors with regular patrol presence. Safe for night travel until 11 PM.` },
-    { level: 'moderate', text: `Generally safe during daytime. Exercise caution during evening hours. Consider traveling with friends after 9 PM.` },
-    { level: 'high-risk', text: `Use alternative routes during night hours. Several safety concerns reported. Consider cab services for late travel.` },
+    { level: 'safe', text: `Recommended route for all students, including female travelers. Well-lit corridors with regular patrol presence. No recent security incidents reported along this corridor. Safe for night travel until 11 PM.` },
+    { level: 'moderate', text: `Generally safe during daytime hours (6 AM – 9 PM). Exercise caution during evening hours near ${hotspots[0]?.label.toLowerCase() || 'commercial areas'}. Consider traveling with friends after 9 PM. Keep emergency contacts handy.` },
+    { level: 'high-risk', text: `⚠️ Use alternative routes during night hours (after 8 PM). Multiple safety concerns reported along this corridor. ${hotspots.length} risk zones identified. Consider cab services for late travel. Female students should avoid this route after sunset.` },
   ];
 
   const aiSummaries = [
-    `Based on reports from accommodations near ${accommodation.area} and along the corridor to ${college.area}, this route is ${riskLevel === 'safe' ? 'generally safe' : riskLevel === 'moderate' ? 'moderately safe' : 'concerning'}. ${hotspots.length > 0 ? `The area around ${hotspots[0].label.toLowerCase()} has received attention from local authorities.` : ''} Students are advised to ${riskLevel === 'safe' ? 'travel freely during most hours' : 'avoid travel after 10 PM'}.`,
-    `Analysis of ${hotspots.reduce((s, h) => s + h.reportCount, 0)} reports along this corridor shows ${riskLevel === 'safe' ? 'minimal safety concerns' : 'some areas requiring attention'}. The route passes through ${accommodation.area} which has ${avgScore >= 80 ? 'strong' : 'moderate'} safety ratings. ${nightSafety >= 70 ? 'Night safety is also commendable.' : 'Late night travel should be avoided.'}`,
+    `Based on analysis of ${hotspots.reduce((s, h) => s + h.reportCount, 0)} reports from accommodations near ${accommodation.area} and along the corridor to ${college.area}, this route is ${riskLevel === 'safe' ? 'generally safe' : riskLevel === 'moderate' ? 'moderately safe' : 'concerning'}. ${hotspots.length > 0 ? `The area around ${hotspots[0].label.toLowerCase()} has received a ${avgScore >= 60 ? 'small' : 'significant'} increase in safety complaints during late evening hours. Local authorities have been notified and additional lighting has been requested.` : 'No major safety concerns have been reported along this route.'} Students are advised to ${riskLevel === 'safe' ? 'travel freely during most hours with standard precautions' : riskLevel === 'moderate' ? 'avoid travel after 10 PM and stay in groups during evening hours' : 'use alternative routes after 8 PM and consider cab services for late travel'}.`,
+    `This ${riskLevel === 'safe' ? 'well-maintained' : riskLevel === 'moderate' ? 'moderate-risk' : 'high-risk'} corridor spans ${distanceKm.toFixed(1)} km from ${accommodation.area} to ${college.area}. ${riskLevel === 'safe' ? 'The route features well-lit streets, active security presence, and regular patrol routes.' : `The route passes through ${hotspots.length} area${hotspots.length !== 1 ? 's' : ''} with elevated safety concerns.`} Night safety rating of ${nightSafety}/100 ${nightSafety >= 70 ? 'indicates strong overnight security' : nightSafety >= 50 ? 'suggests moderate overnight safety' : 'suggests limited overnight security measures'}. ${hotspots.length > 0 ? `Key concern: ${hotspots[0].label} with ${hotspots[0].reportCount} reports filed.` : ''}`,
   ];
 
   return {
@@ -182,7 +182,7 @@ export function getRouteComparison(
   return {
     routeA,
     routeB,
-    aiRecommendation: `${better.accommodationName} provides a ${diff > 15 ? 'significantly' : 'moderately'} safer daily commute (${better.safetyScore} vs ${worse.safetyScore}). ${better.accommodationName} has fewer nearby complaints and better night safety ratings. We recommend choosing ${better.accommodationName} for a safer daily commute.`,
+    aiRecommendation: `📊 AI Analysis: ${better.accommodationName} provides a ${diff > 15 ? 'significantly' : 'moderately'} safer daily commute to ${routeA.collegeName} with a safety score of ${better.safetyScore} vs ${worse.safetyScore}. ${better.accommodationName} has ${better.hotspots.length} risk zones compared to ${worse.hotspots.length} for ${worse.accommodationName}. Night safety rating: ${better.nightSafetyRating}/100 vs ${worse.nightSafetyRating}/100. Recommendation: Choose ${better.accommodationName} for a safer, more comfortable daily commute.`,
   };
 }
 

@@ -1,10 +1,4 @@
-import api from './api';
-
-function unwrap(res: any) {
-  const body = res.data;
-  if (body && body.success !== undefined && body.data !== undefined) return body.data;
-  return body;
-}
+import api, { unwrap } from './api';
 
 export const accommodationService = {
   async getAccommodations(params?: any) {

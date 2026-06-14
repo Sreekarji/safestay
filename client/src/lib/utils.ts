@@ -28,24 +28,12 @@ export function formatRelativeTime(date: string): string {
   return formatDate(date);
 }
 
-export function getSSIColor(ssi: number): string {
-  if (ssi >= 80) return '#10B981';
-  if (ssi >= 60) return '#F59E0B';
-  if (ssi >= 40) return '#F97316';
-  return '#EF4444';
-}
-
-export function getSSILabel(ssi: number): string {
-  if (ssi >= 80) return 'Very Safe';
-  if (ssi >= 60) return 'Moderate';
-  if (ssi >= 40) return 'Caution';
-  return 'High Risk';
-}
+// Re-export from types to avoid duplication
+export { getSSIColor, getSSILabel } from '@/types';
 
 export function getSSITailwind(ssi: number): string {
-  if (ssi >= 80) return 'bg-emerald-100 text-emerald-700';
-  if (ssi >= 60) return 'bg-amber-100 text-amber-700';
-  if (ssi >= 40) return 'bg-orange-100 text-orange-700';
+  if (ssi >= 70) return 'bg-emerald-100 text-emerald-700';
+  if (ssi >= 40) return 'bg-amber-100 text-amber-700';
   return 'bg-red-100 text-red-700';
 }
 

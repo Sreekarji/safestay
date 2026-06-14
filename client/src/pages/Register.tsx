@@ -2,29 +2,61 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Shield } from 'lucide-react';
+import { Shield, Building2 } from 'lucide-react';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { useAuthStore } from '@/stores/authStore';
+import type { StudentRegisterFormData } from '@/lib/validations';
 
 export function Register() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { register: registerUser, error, clearError } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
-  const handleSubmit = async (data: any) => {
-    try { setLocalError(null); clearError(); await registerUser(data); navigate('/verify-otp'); }
-    catch (err: any) { setLocalError(err.message || 'Registration failed'); }
+  const { t } = useTranslation();
+
+  const handleSubmit = async (data: StudentRegisterFormData) => {
+    try {
+      setLocalError(null);
+      clearError();
+      await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        phone: data.phone,
+        role: 'student',
+      });
+      navigate('/verify-otp');
+    } catch (err: any) {
+      setLocalError(err.message || t('auth.registrationFailed'));
+    }
   };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-950 flex items-center justify-center p-4">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-3"><Shield className="h-10 w-10 text-primary-600" /></div>
-            <h1 className="text-2xl font-bold text-slate-900">{t('auth.createAccount')}</h1>
+            <div className="flex justify-center mb-3">
+              <Shield className="h-10 w-10 text-primary-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-900">{t('auth.createYourAccount')}</h1>
+            <p className="text-sm text-slate-500 mt-1">{t('auth.registerSubtitle')}</p>
           </div>
+
           <RegisterForm onSubmit={handleSubmit} error={localError || error} />
-          <p className="mt-6 text-center text-sm text-slate-500">{t('auth.hasAccount')}{' '}<Link to="/login" className="text-primary-600 font-medium">{t('auth.signIn')}</Link></p>
+
+          <div className="mt-6 text-center">
+            <p className="text-sm text-slate-500">
+              {t('auth.propertyOwnerPrompt')}{' '}
+              <Link to="/owner/register" className="text-primary-600 font-medium inline-flex items-center gap-1 hover:underline">
+                <Building2 className="h-3.5 w-3.5" /> {t('auth.registerAsOwner')}
+              </Link>
+            </p>
+          </div>
+
+          <p className="mt-4 text-center text-sm text-slate-500">
+            {t('auth.hasAccount')}{' '}
+            <Link to="/login" className="text-primary-600 font-medium">{t('auth.signIn')}</Link>
+          </p>
         </div>
       </motion.div>
     </div>

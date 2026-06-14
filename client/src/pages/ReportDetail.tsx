@@ -27,8 +27,16 @@ export function ReportDetail() {
     if (id) fetchReport(id);
   }, [id, fetchReport]);
 
-  if (loading) return <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary-600" /></div>;
-  if (!report) return <div className="p-6 text-center text-slate-500">Report not found</div>;
+  if (loading) return <div className="flex flex-col items-center justify-center h-64 gap-3" aria-live="polite"><Loader2 className="h-8 w-8 animate-spin text-primary-600" /><span className="text-sm text-slate-500">Loading...</span></div>;
+  if (!report) return (
+    <div className="p-6 text-center text-slate-500">
+      <p className="mb-4">Report not found</p>
+      <div className="flex items-center justify-center gap-3">
+        <Button variant="outline" onClick={() => window.location.reload()}>Retry</Button>
+        <Button variant="ghost" onClick={() => navigate(-1)}>Go Back</Button>
+      </div>
+    </div>
+  );
 
   const accommodation = typeof report.accommodationId === 'object' ? report.accommodationId : null;
   const reporter = typeof report.userId === 'object' ? report.userId : null;
@@ -63,7 +71,7 @@ export function ReportDetail() {
         {report.images && report.images.length > 0 && (
           <Card className="mb-6"><CardHeader><CardTitle>Evidence</CardTitle></CardHeader>
             <CardContent><div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-              {report.images.map((img, i) => <img key={i} src={img} alt="Evidence" className="rounded-lg object-cover h-40 w-full" />)}
+              {report.images.map((img, i) => <img key={i} src={img} alt={`Evidence photo ${i + 1} for report: ${report.title}`} className="rounded-lg object-cover h-40 w-full" />)}
             </div></CardContent>
           </Card>
         )}
@@ -104,7 +112,7 @@ export function ReportDetail() {
               <p className="text-slate-700">{report.ownerResponse.message}</p>
               {report.ownerResponse.proofImages?.length > 0 && (
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  {report.ownerResponse.proofImages.map((img, i) => <img key={i} src={img} alt="Proof" className="rounded-lg h-24 w-full object-cover" />)}
+                  {report.ownerResponse.proofImages.map((img, i) => <img key={i} src={img} alt={`Owner response proof photo ${i + 1}`} className="rounded-lg h-24 w-full object-cover" />)}
                 </div>
               )}
             </CardContent>

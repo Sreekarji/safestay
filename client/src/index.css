@@ -2,17 +2,161 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  * { @apply border-slate-200; }
-  body { @apply bg-white text-slate-900 font-sans antialiased; }
-  ::selection { @apply bg-primary-100 text-primary-900; }
-  html { scroll-behavior: smooth; }
+body {
+  color: #1e293b;
 }
 
-@layer utilities {
-  .line-clamp-1 { overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+html.dark body {
+  color: #e2e8f0;
 }
 
-.leaflet-container { font-family: 'Inter', system-ui, sans-serif; }
-.leaflet-popup-content-wrapper { @apply rounded-xl shadow-lg border border-slate-200; }
-.leaflet-popup-content { margin: 8px 12px; }
+#root {
+  min-height: 100vh;
+  width: 100%;
+}
+
+/* ── Leaflet map overrides ─────────────────────────────────── */
+.leaflet-container {
+  background: #e2e8f0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  z-index: 0 !important;
+}
+
+.dark .leaflet-container {
+  background: #1e293b !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: #ffffff !important;
+  color: #1e293b !important;
+  border-radius: 12px !important;
+  border: 1px solid #e2e8f0 !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+.dark .leaflet-popup-content-wrapper {
+  background: #0f172a !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #1e293b !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
+}
+
+.leaflet-popup-content-wrapper .leaflet-popup-content {
+  color: inherit !important;
+  margin: 0 !important;
+}
+
+.leaflet-popup-tip {
+  background: #ffffff !important;
+  border: 1px solid #e2e8f0 !important;
+  border-top: none !important;
+  border-left: none !important;
+}
+
+.dark .leaflet-popup-tip {
+  background: #0f172a !important;
+  border-color: #1e293b !important;
+}
+
+.leaflet-popup-close-button {
+  color: #64748b !important;
+}
+
+.leaflet-popup-close-button:hover {
+  color: #1e293b !important;
+}
+
+.dark .leaflet-popup-close-button {
+  color: #94a3b8 !important;
+}
+
+.dark .leaflet-popup-close-button:hover {
+  color: #f1f5f9 !important;
+}
+
+/* ── Popup inner content (dark mode text fixes) ────────────── */
+.dark .leaflet-popup-content-wrapper h3,
+.dark .leaflet-popup-content-wrapper p,
+.dark .leaflet-popup-content-wrapper span {
+  color: #f1f5f9 !important;
+}
+
+.dark .leaflet-popup-content-wrapper .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+
+.dark .leaflet-popup-content-wrapper .text-slate-500,
+.dark .leaflet-popup-content-wrapper .text-slate-400 {
+  color: #94a3b8 !important;
+}
+
+/* ── Custom SSI marker ─────────────────────────────────────── */
+.ssi-marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+}
+
+.ssi-marker:hover {
+  transform: scale(1.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Scrollbar styling ─────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* ── Timeline slider custom thumb ──────────────────────────── */
+.slider-thumb::-webkit-slider-thumb {
+  -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+  background: #3b82f6; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  cursor: pointer; transition: transform 0.15s ease;
+}
+.slider-thumb::-webkit-slider-thumb:hover { transform: scale(1.2); }
+.slider-thumb::-moz-range-thumb {
+  width: 18px; height: 18px; border-radius: 50%; background: #3b82f6;
+  border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer;
+}
+
+/* ── Hotspot pulse animation ───────────────────────────────── */
+@keyframes hotspot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.1); opacity: 0.8; }
+}

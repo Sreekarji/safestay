@@ -1,11 +1,5 @@
-import api from './api';
+import api, { unwrap } from './api';
 import type { Report, QueryParams } from '@/types';
-
-function unwrap(res: any) {
-  const body = res.data;
-  if (body && body.success !== undefined && body.data !== undefined) return body.data;
-  return body;
-}
 
 export const reportService = {
   async createReport(data: any) {
