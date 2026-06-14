@@ -1,6 +1,7 @@
 const cloudinary = require('cloudinary').v2;
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -9,21 +10,16 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// Configure CloudinaryStorage for multer
-const storage = new CloudinaryStorage({
-  cloudinary: cloudinary,
-  params: {
-    folder: 'student-safety-reports',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'gif', 'webp'],
-    transformation: [
-      { width: 800, height: 800, crop: 'limit', quality: 'auto' }
-    ]
-  }
-});
+// Ensure local uploads directory exists
+const uploadsDir = path.join(__dirname, '..', 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
-// Create multer upload middleware
+// Use memory storage — we'll handle Cloudinary upload manually in the route
+// so we can fall back to local disk if Cloudinary is unavailable
 const upload = multer({
-  storage: storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
   fileFilter: (req, file, cb) => {
     const allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -35,4 +31,4 @@ const upload = multer({
   }
 });
 
-module.exports = { cloudinary, upload };
+module.exports = { cloudinary, upload, uploadsDir };

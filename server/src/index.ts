@@ -17,6 +17,7 @@ import ownerRoutes from './routes/owner.js';
 import adminRoutes from './routes/admin.js';
 import analyticsRoutes from './routes/analytics.js';
 import aiRoutes from './routes/aiRoutes.js';
+import profileRoutes from './routes/profile.js';
 
 // Load environment variables
 dotenv.config();
@@ -33,8 +34,13 @@ app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, curl, etc.)
     if (!origin) return callback(null, true);
-    // Allow any localhost origin in development
-    if (/^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+    // Allow any localhost origin in development (http or https, any port)
+    if (/^https?:\/\/(localhost|127\.0\.0\.1):\d+$/.test(origin)) return callback(null, true);
+    // Allow the configured frontend URL
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (frontendUrl && origin === frontendUrl) return callback(null, true);
+    // In development, allow all origins
+    if (process.env.NODE_ENV !== 'production') return callback(null, true);
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
@@ -50,6 +56,7 @@ app.use('/api', apiLimiter);
 // Routes
 // ========================
 app.use('/api/auth', authRoutes);
+app.use('/api/profile', profileRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/accommodations', accommodationRoutes);
 app.use('/api/reports', reportRoutes);

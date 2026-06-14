@@ -73,7 +73,7 @@ export default function OwnerDashboard() {
     }
 
     // Check if owner is verified before fetching data
-    if ((user as any).ownerVerification?.status !== 'verified') {
+    if (user.ownerVerificationStatus !== 'verified') {
       setLoading(false);
       setError('verification_pending');
       return;
@@ -220,8 +220,8 @@ export default function OwnerDashboard() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          resolutionDescription: responseText.trim(),
-          resolutionImages: imageUrls,
+          description: responseText.trim(),
+          images: imageUrls,
           actionTaken: responseText.trim()
         })
       });

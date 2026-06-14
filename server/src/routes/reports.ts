@@ -1,5 +1,5 @@
 import { Router, Response } from 'express';
-import { Report } from '../models/Report.js';
+import { Report, IReport } from '../models/Report.js';
 import { Accommodation } from '../models/Accommodation.js';
 import { VerificationResult } from '../models/VerificationResult.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
@@ -8,6 +8,49 @@ import { verifyReport } from '../utils/aiVerification.js';
 import { calculateSSI, getTrustScoreLabel, getTrustScoreColor } from '../utils/trustScore.js';
 
 const router = Router();
+
+// ========================
+// AI Auto-Disposition Thresholds
+// ========================
+// Three-tier system: auto-reject, admin review, auto-approve
+const AI_THRESHOLDS = {
+  /** Consensus 'reject' with confidence >= this → auto-reject (clearly fake/spam) */
+  AUTO_REJECT_CONFIDENCE: 0.6,
+  /** Consensus 'accept' with confidence >= this → auto-approve (clearly legitimate) */
+  AUTO_APPROVE_CONFIDENCE: 0.8,
+} as const;
+
+/**
+ * Determine report status based on AI verification results.
+ *
+ * Three-tier disposition:
+ *   - reject  + confidence >= 0.6  → 'rejected'   (auto-reject, clearly fake)
+ *   - accept  + confidence >= 0.8  → 'ai_verified' (auto-approve, clearly legitimate)
+ *   - everything else              → 'pending'     (admin review needed)
+ */
+function getAIDisposition(
+  consensus: 'accept' | 'reject' | 'pending',
+  overallConfidence: number
+): { status: IReport['status']; reason: string } {
+  if (consensus === 'reject' && overallConfidence >= AI_THRESHOLDS.AUTO_REJECT_CONFIDENCE) {
+    return {
+      status: 'rejected',
+      reason: `Auto-rejected: AI consensus reject with ${(overallConfidence * 100).toFixed(0)}% confidence`,
+    };
+  }
+
+  if (consensus === 'accept' && overallConfidence >= AI_THRESHOLDS.AUTO_APPROVE_CONFIDENCE) {
+    return {
+      status: 'ai_verified',
+      reason: `Auto-approved: AI consensus accept with ${(overallConfidence * 100).toFixed(0)}% confidence`,
+    };
+  }
+
+  return {
+    status: 'pending',
+    reason: `Needs admin review: consensus=${consensus}, confidence=${(overallConfidence * 100).toFixed(0)}%`,
+  };
+}
 
 // ========================
 // POST /api/reports
@@ -52,15 +95,42 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
     }
 
     const {
-      accommodationId, category, severity, title, description,
+      accommodationId, category: rawCategory, severity, title, description,
       images = [], isAnonymous = false,
     } = req.body;
 
+    // Map client display names to model enum values
+    const categoryMap: Record<string, string> = {
+      'Food Safety': 'food_safety',
+      'Water Quality': 'water_quality',
+      'Security': 'security',
+      'Hygiene': 'hygiene',
+      'Infrastructure': 'structural',
+      // Also accept lowercase with underscores (already mapped)
+      'food_safety': 'food_safety',
+      'water_quality': 'water_quality',
+      'security': 'security',
+      'hygiene': 'hygiene',
+      'structural': 'structural',
+      'fire_safety': 'fire_safety',
+      'electrical': 'electrical',
+      'other': 'other',
+    };
+    const category = categoryMap[rawCategory] || rawCategory;
+
+    // Normalize images: accept string[] or {url, publicId}[] — model stores string[]
+    const normalizedImages: string[] = Array.isArray(images)
+      ? images.map((img: any) => (typeof img === 'string' ? img : img?.url)).filter(Boolean)
+      : [];
+
+    // Auto-generate title if not provided
+    const reportTitle = title || `${category || 'Safety Issue'} Report`;
+
     // Validation
-    if (!accommodationId || !category || !severity || !title || !description) {
+    if (!accommodationId || !category || !severity || !description) {
       res.status(400).json({
         success: false,
-        error: 'Please provide all required fields',
+        error: 'Please provide all required fields (accommodationId, category, severity, description)',
         code: 'VALIDATION_ERROR',
       });
       return;
@@ -92,9 +162,9 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
       userId: user._id,
       category,
       severity,
-      title,
+      title: reportTitle,
       description,
-      images,
+      images: normalizedImages,
       isAnonymous,
       status: 'pending',
     });
@@ -104,7 +174,7 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
     // Run AI verification in background (don't await)
     verifyReport(
       report._id.toString(),
-      images,
+      normalizedImages,
       category,
       title,
       description,
@@ -120,13 +190,11 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
         verifiedAt: new Date(),
       };
 
-      // Set status based on consensus
-      if (aiResult.consensus === 'accept' && aiResult.overallConfidence >= 0.85) {
-        report.status = 'ai_verified';
-      } else if (aiResult.consensus === 'reject') {
-        report.status = 'rejected';
-      }
-      // Otherwise remains 'pending' for admin review
+      // Three-tier auto-disposition based on AI score
+      const disposition = getAIDisposition(aiResult.consensus, aiResult.overallConfidence);
+      report.status = disposition.status;
+      report.aiVerification.dispositionReason = disposition.reason;
+      console.log(`📋 Report ${report._id}: ${disposition.reason}`);
 
       await report.save();
 
@@ -364,11 +432,11 @@ router.put('/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
           verifiedAt: new Date(),
         };
 
-        if (aiResult.consensus === 'accept' && aiResult.overallConfidence >= 0.85) {
-          report.status = 'ai_verified';
-        } else if (aiResult.consensus === 'reject') {
-          report.status = 'rejected';
-        }
+        // Three-tier auto-disposition based on AI score
+        const disposition = getAIDisposition(aiResult.consensus, aiResult.overallConfidence);
+        report.status = disposition.status;
+        report.aiVerification.dispositionReason = disposition.reason;
+        console.log(`📋 Report ${report._id} re-verified: ${disposition.reason}`);
 
         await report.save();
       }).catch(err => {

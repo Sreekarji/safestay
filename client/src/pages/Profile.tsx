@@ -276,19 +276,20 @@ export default function Profile() {
 
       const data = await response.json();
       
-      if (data.success && data.urls && data.urls.length > 0) {
+      const imageUrls = data.urls || data.data?.images || [];
+      if (data.success && imageUrls.length > 0) {
         const updateResponse = await fetch(`${API}/api/profile`, {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ profilePhoto: data.urls[0] })
+          body: JSON.stringify({ profilePhoto: imageUrls[0] })
         });
 
         const updateData = await updateResponse.json();
         if (updateData.success) {
-          setProfile(prev => prev ? { ...prev, profilePhoto: data.urls[0] } : null);
+          setProfile(prev => prev ? { ...prev, profilePhoto: imageUrls[0] } : null);
           setShowPhotoModal(false);
           setPhotoPreview(null);
           alert('Profile photo updated successfully!');

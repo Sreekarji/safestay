@@ -70,11 +70,34 @@ router.post('/', authMiddleware, uploadLimiter, upload.array('images', 5), async
       },
       message: `${uploadedImages.length} image(s) uploaded successfully`,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Upload error:', error);
+
+    // Cloudinary API errors (invalid credentials, account issues, etc.)
+    if (error?.http_code) {
+      res.status(error.http_code === 401 || error.http_code === 403 ? 500 : error.http_code).json({
+        success: false,
+        error: error.message || 'Image storage service error. Please contact admin.',
+        code: 'CLOUDINARY_ERROR',
+      });
+      return;
+    }
+
+    // Multer errors
+    if (error?.name === 'MulterError') {
+      if (error.code === 'LIMIT_FILE_SIZE') {
+        res.status(400).json({
+          success: false,
+          error: 'File size too large. Maximum 5MB allowed.',
+          code: 'UPLOAD_ERROR',
+        });
+        return;
+      }
+    }
+
     res.status(500).json({
       success: false,
-      error: 'Upload failed',
+      error: error?.message || 'Upload failed. Please try again.',
       code: 'UPLOAD_ERROR',
     });
   }

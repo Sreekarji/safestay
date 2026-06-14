@@ -131,11 +131,21 @@ export default function AdminDashboard() {
       console.log('Reports response:', reportsData);
       
       if (statsData.success) {
-        setStats(statsData.stats); // ✅ Fixed: Changed from statsData.data to statsData.stats
+        // server.js returns: { success, data: { totalUsers, totalAccommodations, totalReports, pendingReports, aiStats, ownerStats } }
+        const d = statsData.data || statsData.stats || {};
+        setStats({
+          totalUsers: d.totalUsers || 0,
+          totalAccommodations: d.totalAccommodations || 0,
+          totalReports: d.totalReports || 0,
+          pendingReports: d.pendingReports || 0,
+          aiStats: d.aiStats,
+          ownerVerifications: d.ownerStats || d.ownerVerifications,
+        });
       }
-      
+
       if (reportsData.success) {
-        setReports(reportsData.reports || []); // ✅ Fixed: Changed from reportsData.data to reportsData.reports
+        // server.js returns: { success, data: [...reports] }
+        setReports(reportsData.data || reportsData.reports || []);
       }
     } catch (err) {
       console.error('Error fetching admin data:', err);

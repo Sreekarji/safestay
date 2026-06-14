@@ -60,7 +60,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               'Authorization': `Bearer ${storedToken}`
             }
           });
-          
+
           if (res.ok) {
             const data = await res.json();
             if (data.success && data.data) {
@@ -75,7 +75,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 collegeName: data.data.collegeName || null,
                 profilePhoto: data.data.profilePhoto || null,
                 phone: data.data.phone || null,
-                isBanned: data.data.isBanned || false
+                isBanned: data.data.isBanned || false,
+                ownerVerificationStatus: data.data.ownerVerificationStatus || null,
+                propertyName: data.data.propertyName || null,
+                propertyCount: data.data.propertyCount || null
               };
 
               setUser(updatedUser);
@@ -136,7 +139,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           collegeName: data.user?.collegeName || data.data?.user?.collegeName || null,
           profilePhoto: data.user?.profilePhoto || data.data?.user?.profilePhoto || null,
           phone: data.user?.phone || data.data?.user?.phone || null,
-          isBanned: data.user?.isBanned || data.data?.user?.isBanned || false
+          isBanned: data.user?.isBanned || data.data?.user?.isBanned || false,
+          ownerVerificationStatus: data.user?.ownerVerificationStatus || data.data?.user?.ownerVerificationStatus || null,
+          propertyName: data.user?.propertyName || data.data?.user?.propertyName || null,
+          propertyCount: data.user?.propertyCount || data.data?.user?.propertyCount || null
         };
 
         localStorage.setItem("user", JSON.stringify(userData));

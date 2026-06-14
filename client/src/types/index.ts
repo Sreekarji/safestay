@@ -18,6 +18,9 @@ export interface User {
     rejectionReason?: string;
     verifiedAt?: string;
   };
+  ownerVerificationStatus?: 'pending' | 'under_review' | 'verified' | 'rejected';
+  propertyName?: string;
+  propertyCount?: string;
   createdAt?: string;
 }
 
@@ -56,16 +59,24 @@ export interface Report {
     gemini?: AIVerdictResult;
     consensus?: 'accept' | 'reject' | 'pending';
     overallConfidence?: number;
+    dispositionReason?: string;
     verifiedAt?: string;
   };
   ownerResponse?: {
-    message: string;
+    response: string;
     proofImages: string[];
     respondedAt: string;
   };
+  resolution?: {
+    description: string;
+    actionTaken: string;
+    images: string[];
+    resolvedBy: string;
+    resolvedAt: string;
+  };
   studentVerification?: {
-    verified: boolean;
-    comment?: string;
+    isResolved: boolean;
+    feedback?: string;
     verifiedAt: string;
   };
   counterReport?: {

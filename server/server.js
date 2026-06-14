@@ -23,7 +23,7 @@ const ownerMiddleware = require('./middleware/ownerMiddleware');
 
 // Utils
 const { generateOTP, sendOTPEmail } = require('./utils/emailService');
-const { cloudinary, upload } = require('./config/cloudinary');
+const { cloudinary, upload, uploadsDir } = require('./config/cloudinary');
 const { updateAccommodationScore } = require('./utils/trustScore');
 
 // ✅ AI Verification Import
@@ -128,16 +128,44 @@ app.get("/api/test", (req, res) => {
 // IMAGE UPLOAD ROUTES
 // ============================================================
 
-app.post('/api/upload', authMiddleware, upload.array('images', 5), (req, res) => {
+const fs = require('fs');
+
+app.post('/api/upload', authMiddleware, upload.array('images', 5), async (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({ success: false, message: 'No files uploaded' });
     }
 
-    const uploadedImages = req.files.map(file => ({
-      url: file.path,
-      publicId: file.filename
-    }));
+    const uploadedImages = [];
+
+    for (const file of req.files) {
+      let url, publicId;
+
+      // Try Cloudinary first
+      try {
+        const b64 = file.buffer.toString('base64');
+        const dataURI = `data:${file.mimetype};base64,${b64}`;
+        const result = await cloudinary.uploader.upload(dataURI, {
+          folder: 'safestay/reports',
+          resource_type: 'auto',
+        });
+        url = result.secure_url;
+        publicId = result.public_id;
+        console.log('[Upload] Cloudinary OK:', publicId);
+      } catch (cloudErr) {
+        // Fall back to local disk storage
+        console.warn('[Upload] Cloudinary failed, saving locally:', cloudErr.message);
+        const ext = file.originalname.split('.').pop() || 'jpg';
+        const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const filepath = path.join(uploadsDir, filename);
+        fs.writeFileSync(filepath, file.buffer);
+        url = `${req.protocol}://${req.get('host')}/uploads/${filename}`;
+        publicId = `local-${filename}`;
+        console.log('[Upload] Saved locally:', filename);
+      }
+
+      uploadedImages.push({ url, publicId });
+    }
 
     res.json({
       success: true,
@@ -153,10 +181,20 @@ app.post('/api/upload', authMiddleware, upload.array('images', 5), (req, res) =>
 app.delete('/api/upload/:publicId', authMiddleware, async (req, res) => {
   try {
     const { publicId } = req.params;
-    const result = await cloudinary.uploader.destroy(publicId);
 
-    if (result.result !== 'ok') {
-      return res.status(400).json({ success: false, message: 'Error deleting image from cloud' });
+    if (publicId.startsWith('local-')) {
+      // Delete local file
+      const filename = publicId.replace('local-', '');
+      const filepath = path.join(uploadsDir, filename);
+      if (fs.existsSync(filepath)) {
+        fs.unlinkSync(filepath);
+      }
+    } else {
+      // Delete from Cloudinary
+      const result = await cloudinary.uploader.destroy(publicId);
+      if (result.result !== 'ok') {
+        return res.status(400).json({ success: false, message: 'Error deleting image from cloud' });
+      }
     }
 
     res.json({ success: true, message: 'Image deleted successfully' });

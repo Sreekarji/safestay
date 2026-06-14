@@ -33,6 +33,7 @@ export interface IReport extends Document {
     };
     consensus: 'accept' | 'reject' | 'pending';
     overallConfidence: number;
+    dispositionReason?: string;
     verifiedAt?: Date;
   };
 
@@ -140,6 +141,10 @@ const reportSchema = new Schema<IReport>({
       default: 0,
       min: 0,
       max: 1,
+    },
+    dispositionReason: {
+      type: String,
+      default: null,
     },
     verifiedAt: Date,
   },

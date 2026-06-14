@@ -311,7 +311,7 @@ router.get('/reports', async (req: AuthRequest, res: Response) => {
 // ========================
 router.put('/reports/:id/resolve', upload.array('proofImages', 5), async (req: AuthRequest, res: Response) => {
   try {
-    const { response } = req.body;
+    const { response, resolutionImages } = req.body;
     const files = req.files as Express.Multer.File[];
 
     const report = await Report.findById(req.params.id);
@@ -336,7 +336,7 @@ router.put('/reports/:id/resolve', upload.array('proofImages', 5), async (req: A
       return;
     }
 
-    // Upload proof images
+    // Upload proof images from multer files, or use pre-uploaded URLs from JSON body
     let proofImageUrls: string[] = [];
     if (files && files.length > 0) {
       const uploadPromises = files.map(async (file) => {
@@ -348,6 +348,9 @@ router.put('/reports/:id/resolve', upload.array('proofImages', 5), async (req: A
         return result.secure_url;
       });
       proofImageUrls = await Promise.all(uploadPromises);
+    } else if (resolutionImages && Array.isArray(resolutionImages)) {
+      // Frontend sends pre-uploaded Cloudinary URLs as JSON
+      proofImageUrls = resolutionImages;
     }
 
     report.ownerResponse = {

@@ -42,7 +42,10 @@ export const AccommodationDetail: React.FC = () => {
   const fetchAccommodation = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API}/api/accommodations/${id}`);
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = {};
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const response = await fetch(`${API}/api/accommodations/${id}`, { headers });
       const data = await response.json();
       if (data.success) {
         setAccommodation(data.data);
@@ -60,7 +63,7 @@ export const AccommodationDetail: React.FC = () => {
   const isOwner = useMemo(() => {
     if (!user || !accommodation) return false;
     if (user.role !== 'owner') return false;
-    const ownerId = accommodation.owner?._id || accommodation.owner;
+    const ownerId = accommodation.ownerId?._id || accommodation.ownerId || accommodation.owner?._id || accommodation.owner;
     const userId = user._id;
     return String(userId) === String(ownerId);
   }, [user, accommodation]);
@@ -154,8 +157,8 @@ export const AccommodationDetail: React.FC = () => {
         });
 
         const uploadData = await uploadRes.json();
-        if (uploadData.success && uploadData.urls) {
-          imageUrls = uploadData.urls;
+        if (uploadData.success) {
+          imageUrls = uploadData.urls || uploadData.data?.images || [];
         }
       }
 
@@ -166,8 +169,8 @@ export const AccommodationDetail: React.FC = () => {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          resolutionDescription: responseText.trim(),
-          resolutionImages: imageUrls,
+          description: responseText.trim(),
+          images: imageUrls,
           actionTaken: responseText.trim()
         })
       });

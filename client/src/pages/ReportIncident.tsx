@@ -30,6 +30,7 @@ export const ReportIncident: React.FC = () => {
   const [formData, setFormData] = useState({
     accommodation: '',
     issueType: 'Security' as 'Food Safety' | 'Water Quality' | 'Hygiene' | 'Security' | 'Infrastructure',
+    severity: 5,
     description: '',
   });
   
@@ -127,17 +128,21 @@ export const ReportIncident: React.FC = () => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    // Clear search when accommodation is selected so the option stays visible
+    if (name === 'accommodation' && value) {
+      setSearchTerm('');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // ✅ Double-check college verification before submit
     if (!isCollegeVerified) {
       setSubmitError('You must verify your college email before submitting reports.');
       return;
     }
-    
+
     if (!formData.accommodation) {
       alert("Please select an accommodation");
       setStep(1);
@@ -152,19 +157,28 @@ export const ReportIncident: React.FC = () => {
 
     setIsSubmitting(true);
     setSubmitError('');
-    
+
     try {
+      // Transform images: extract just the URLs for the Report model (which stores string[])
+      const imageUrls = uploadedImages.map(img => img.url);
+
+      // Generate a title from issue type + accommodation name
+      const selectedAccommodation = accommodations.find(a => a._id === formData.accommodation);
+      const autoTitle = `${formData.issueType} — ${selectedAccommodation?.name || 'Unknown Property'}`;
+
       const res = await fetch(`${API}/api/reports`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ 
-          accommodation: formData.accommodation,
-          issueType: formData.issueType,
+        body: JSON.stringify({
+          accommodationId: formData.accommodation,
+          category: formData.issueType,
+          severity: formData.severity,
+          title: autoTitle,
           description: formData.description,
-          images: uploadedImages 
+          images: imageUrls,
         }),
       });
 
@@ -451,6 +465,14 @@ export const ReportIncident: React.FC = () => {
                                 {acc.name} - {acc.address}, {acc.city}
                               </option>
                             ))}
+                            {/* Keep the selected accommodation in the list even if it's filtered out by search */}
+                            {formData.accommodation && 
+                             !(searchTerm ? filteredAccommodations : accommodations).some(a => a._id === formData.accommodation) &&
+                             accommodations.filter(a => a._id === formData.accommodation).map((acc) => (
+                              <option key={acc._id + '-selected'} value={acc._id}>
+                                {acc.name} - {acc.address}, {acc.city}
+                              </option>
+                            ))}
                           </select>
                           {accommodations.length === 0 && (
                             <p className="text-sm text-orange-600 font-medium bg-orange-50 p-4 rounded-xl border border-orange-100">
@@ -522,6 +544,33 @@ export const ReportIncident: React.FC = () => {
                         <span className={formData.description.length > 1800 ? 'text-red-500' : 'text-gray-400'}>
                           {formData.description.length}/2000
                         </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-sm font-bold">4</span>
+                        How severe is this issue?
+                      </h3>
+                      <div className="space-y-3">
+                        <input
+                          type="range"
+                          name="severity"
+                          min={1}
+                          max={10}
+                          value={formData.severity}
+                          onChange={(e) => setFormData(prev => ({ ...prev, severity: Number(e.target.value) }))}
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                        />
+                        <div className="flex justify-between text-sm">
+                          <span className={`font-bold px-3 py-1 rounded-full text-xs ${
+                            formData.severity <= 3 ? 'bg-green-100 text-green-700' :
+                            formData.severity <= 6 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
+                          }`}>
+                            {formData.severity <= 3 ? 'Low' : formData.severity <= 6 ? 'Medium' : 'High'} — {formData.severity}/10
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

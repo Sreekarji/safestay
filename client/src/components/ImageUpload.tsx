@@ -95,23 +95,30 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({ onImagesChange, upload
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
+        throw new Error(errorData.error || errorData.message || `Upload failed (${response.status})`);
       }
 
       const data = await response.json();
 
-      // Server returns: { success: true, data: { images: string[], publicIds: string[] } }
-      const imageUrls = data.data?.images || (Array.isArray(data.data) ? data.data : null);
-      const publicIds = data.data?.publicIds || [];
+      // Server returns: { success: true, data: [{ url: string, publicId: string }] }
+      // Also handles legacy format: { data: { images: string[], publicIds: string[] } }
+      let newImages: { url: string; publicId: string }[] = [];
 
-      if (!imageUrls || !Array.isArray(imageUrls)) {
+      if (Array.isArray(data.data) && data.data.length > 0 && typeof data.data[0] === 'object' && data.data[0].url) {
+        // New format: array of { url, publicId } objects
+        newImages = [...images, ...data.data];
+      } else if (data.data?.images && Array.isArray(data.data.images)) {
+        // Legacy format: { images: string[], publicIds: string[] }
+        const imageUrls: string[] = data.data.images;
+        const publicIds: string[] = data.data.publicIds || [];
+        const parsed = imageUrls.map((url: string, i: number) => ({
+          url,
+          publicId: publicIds[i] || `upload-${Date.now()}-${i}`,
+        }));
+        newImages = [...images, ...parsed];
+      } else {
         throw new Error('Invalid response format from server');
       }
-
-      const newImages = imageUrls.map((url: string, i: number) => ({
-        url,
-        publicId: publicIds[i] || `upload-${Date.now()}-${i}`,
-      }));
      
       
       setImages(newImages);

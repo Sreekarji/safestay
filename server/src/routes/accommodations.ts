@@ -1,4 +1,6 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import { User } from '../models/User.js';
 import { Accommodation } from '../models/Accommodation.js';
 import { Report } from '../models/Report.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
@@ -122,7 +124,7 @@ router.get('/with-location', async (req, res: Response) => {
 // ========================
 // GET /api/accommodations/:id
 // ========================
-router.get('/:id', async (req, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
   try {
     const accommodation = await Accommodation.findById(req.params.id)
       .populate('ownerId', 'name phone')
@@ -138,11 +140,30 @@ router.get('/:id', async (req, res: Response) => {
       return;
     }
 
-    // Get approved reports for this accommodation
-    const reports = await Report.find({
-      accommodationId: accommodation._id,
-      status: { $in: ['ai_verified', 'approved', 'resolved', 'verified'] },
-    })
+    // Optionally identify the requester to check ownership
+    let requesterId: string | null = null;
+    try {
+      const authHeader = req.headers.authorization;
+      if (authHeader?.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string };
+        requesterId = decoded.userId;
+      }
+    } catch {
+      // Not authenticated or invalid token — treat as public visitor
+    }
+
+    const isOwner = requesterId &&
+      accommodation.ownerId &&
+      String(accommodation.ownerId._id || accommodation.ownerId) === requesterId;
+
+    // Owners see ALL reports; public/students see only verified ones
+    const reportFilter: any = { accommodationId: accommodation._id };
+    if (!isOwner) {
+      reportFilter.status = { $in: ['ai_verified', 'approved', 'resolved', 'verified'] };
+    }
+
+    const reports = await Report.find(reportFilter)
       .populate('userId', 'name college isVerified collegeName')
       .sort({ createdAt: -1 })
       .limit(20);

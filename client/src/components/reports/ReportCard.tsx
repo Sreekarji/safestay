@@ -91,13 +91,13 @@ export function ReportCard({ report, index = 0, onDelete }: Props) {
         )}
 
         {/* Resolution */}
-        {report.status === 'resolved' && report.ownerResponse && (
+        {report.status === 'resolved' && (report.ownerResponse || report.resolution) && (
           <div className="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2">
             <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 mb-1">
               <CheckCircle className="h-3.5 w-3.5" />
               Resolved
             </div>
-            <p className="text-xs text-emerald-600 line-clamp-2">{report.ownerResponse.message}</p>
+            <p className="text-xs text-emerald-600 line-clamp-2">{report.ownerResponse?.response || report.resolution?.description}</p>
           </div>
         )}
 

@@ -105,14 +105,14 @@ export function ReportDetail() {
           </Card>
         )}
 
-        {report.ownerResponse && (
+        {(report.ownerResponse || report.resolution) && (
           <Card className="mb-6 border-l-4 border-blue-500">
             <CardHeader><CardTitle>Owner Response</CardTitle></CardHeader>
             <CardContent>
-              <p className="text-slate-700">{report.ownerResponse.message}</p>
-              {report.ownerResponse.proofImages?.length > 0 && (
+              <p className="text-slate-700">{report.ownerResponse?.response || report.resolution?.description}</p>
+              {(report.ownerResponse?.proofImages?.length > 0 || report.resolution?.images?.length > 0) && (
                 <div className="mt-3 grid grid-cols-3 gap-2">
-                  {report.ownerResponse.proofImages.map((img, i) => <img key={i} src={img} alt={`Owner response proof photo ${i + 1}`} className="rounded-lg h-24 w-full object-cover" />)}
+                  {(report.ownerResponse?.proofImages || report.resolution?.images || []).map((img, i) => <img key={i} src={img} alt={`Owner response proof photo ${i + 1}`} className="rounded-lg h-24 w-full object-cover" />)}
                 </div>
               )}
             </CardContent>
