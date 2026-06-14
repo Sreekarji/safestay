@@ -30,7 +30,13 @@ const PORT = process.env.PORT || 5000;
 // ========================
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, curl, etc.)
+    if (!origin) return callback(null, true);
+    // Allow any localhost origin in development
+    if (/^http:\/\/localhost:\d+$/.test(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
 }));
 app.use(morgan('dev'));
@@ -91,10 +97,12 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // ========================
 const startServer = async () => {
   try {
+    // Configure Cloudinary early so routes can use it
+    configureCloudinary();
+
     // Connect to MongoDB (skip in DEMO_MODE if unavailable)
     if (process.env.DEMO_MODE !== 'true') {
       await connectDB();
-      configureCloudinary();
     } else {
       console.log('⚠️  DEMO MODE: Skipping MongoDB connection');
     }

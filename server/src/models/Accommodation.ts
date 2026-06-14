@@ -12,7 +12,10 @@ export interface IAccommodation extends Document {
     type: 'Point';
     coordinates: [number, number]; // [longitude, latitude]
   };
+  latitude?: number;
+  longitude?: number;
   ownerId: mongoose.Types.ObjectId;
+  owner?: mongoose.Types.ObjectId;
 
   // SSI (SafeStay Safety Index)
   ssi: number;
@@ -30,21 +33,33 @@ export interface IAccommodation extends Document {
     security: number;
   };
 
+  // Trust Score (reference compatibility)
+  trustScore: number;
+  trustScoreLabel: string;
+  trustScoreColor: string;
+  riskScore: number;
+
   // Report counts
   reportCount: number;
   verifiedReportCount: number;
+  totalReports: number;
 
   // Property details
+  description?: string;
   amenities: string[];
   capacity: number;
+  totalRooms?: number;
   currentOccupancy: number;
+  occupiedRooms?: number;
   monthlyRent: number;
+  pricePerMonth?: number;
   contactPhone: string;
   contactEmail: string;
   images: string[]; // Cloudinary URLs
 
   // Status
   isActive: boolean;
+  isVerified: boolean;
 
   createdAt: Date;
   updatedAt: Date;
@@ -99,10 +114,20 @@ const accommodationSchema = new Schema<IAccommodation>({
       required: true,
     },
   },
+  latitude: {
+    type: Number,
+  },
+  longitude: {
+    type: Number,
+  },
   ownerId: {
     type: Schema.Types.ObjectId,
     ref: 'User',
     required: true,
+  },
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
   },
 
   // SSI
@@ -126,6 +151,28 @@ const accommodationSchema = new Schema<IAccommodation>({
     security: { type: Number, default: 50, min: 0, max: 100 },
   },
 
+  // Trust Score
+  trustScore: {
+    type: Number,
+    default: 50,
+    min: 0,
+    max: 100,
+  },
+  trustScoreLabel: {
+    type: String,
+    default: 'Moderate',
+  },
+  trustScoreColor: {
+    type: String,
+    default: '#f5a623',
+  },
+  riskScore: {
+    type: Number,
+    default: 50,
+    min: 0,
+    max: 100,
+  },
+
   // Report counts
   reportCount: {
     type: Number,
@@ -135,19 +182,40 @@ const accommodationSchema = new Schema<IAccommodation>({
     type: Number,
     default: 0,
   },
+  totalReports: {
+    type: Number,
+    default: 0,
+  },
 
   // Property details
+  description: {
+    type: String,
+    maxlength: [2000, 'Description cannot exceed 2000 characters'],
+  },
   amenities: [String],
   capacity: {
     type: Number,
     min: 1,
+  },
+  totalRooms: {
+    type: Number,
+    min: 0,
   },
   currentOccupancy: {
     type: Number,
     default: 0,
     min: 0,
   },
+  occupiedRooms: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   monthlyRent: {
+    type: Number,
+    min: 0,
+  },
+  pricePerMonth: {
     type: Number,
     min: 0,
   },
@@ -160,6 +228,10 @@ const accommodationSchema = new Schema<IAccommodation>({
     type: Boolean,
     default: true,
   },
+  isVerified: {
+    type: Boolean,
+    default: false,
+  },
 }, {
   timestamps: true,
 });
@@ -169,8 +241,10 @@ accommodationSchema.index({ location: '2dsphere' });
 accommodationSchema.index({ area: 1, ssi: -1 });
 accommodationSchema.index({ ssi: -1 });
 accommodationSchema.index({ ownerId: 1 });
+accommodationSchema.index({ owner: 1 });
 accommodationSchema.index({ city: 1, area: 1 });
 accommodationSchema.index({ type: 1 });
 accommodationSchema.index({ isActive: 1 });
+accommodationSchema.index({ trustScore: 1 });
 
 export const Accommodation = mongoose.model<IAccommodation>('Accommodation', accommodationSchema);

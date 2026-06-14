@@ -154,6 +154,7 @@ router.post('/verify-email', authLimiter, async (req: Request, res: Response) =>
 router.post('/send-college-verification', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user;
+    const { collegeEmail, collegeName } = req.body;
 
     if (!user) {
       res.status(401).json({
@@ -164,38 +165,61 @@ router.post('/send-college-verification', authMiddleware, async (req: AuthReques
       return;
     }
 
-    if (user.isVerified) {
+    if (user.isCollegeVerified) {
       res.status(400).json({
         success: false,
-        error: 'Already verified',
+        error: 'College email already verified',
         code: 'VALIDATION_ERROR',
       });
       return;
     }
 
-    // Delete existing OTPs
-    await OTP.deleteMany({ email: user.email, purpose: 'verification' });
+    if (!collegeEmail || !collegeEmail.trim()) {
+      res.status(400).json({
+        success: false,
+        error: 'College email is required',
+        code: 'VALIDATION_ERROR',
+      });
+      return;
+    }
+
+    if (!collegeName || !collegeName.trim()) {
+      res.status(400).json({
+        success: false,
+        error: 'College name is required',
+        code: 'VALIDATION_ERROR',
+      });
+      return;
+    }
+
+    const normalizedEmail = collegeEmail.toLowerCase().trim();
+
+    // Delete existing OTPs for this email
+    await OTP.deleteMany({ email: normalizedEmail, purpose: 'college-verification' });
 
     // Generate and save OTP
     const otp = generateOTP();
     const otpDoc = new OTP({
-      email: user.email,
+      email: normalizedEmail,
       otp,
-      purpose: 'verification',
+      purpose: 'college-verification',
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
     await otpDoc.save();
 
+    // Store college name temporarily
+    await User.findByIdAndUpdate(user._id, { collegeName: collegeName.trim() });
+
     // Send OTP
     await sendEmail({
-      to: user.email,
-      subject: 'SafeStay - College Verification',
-      html: otpEmailTemplate(otp, 'verification'),
+      to: normalizedEmail,
+      subject: 'SafeStay - College Email Verification',
+      html: otpEmailTemplate(otp, 'college-verification'),
     });
 
     res.json({
       success: true,
-      message: 'OTP sent to your college email',
+      message: 'Verification OTP sent to your college email',
     });
   } catch (error) {
     console.error('Send college OTP error:', error);
@@ -212,7 +236,7 @@ router.post('/send-college-verification', authMiddleware, async (req: AuthReques
 // ========================
 router.post('/verify-college', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
-    const { otp } = req.body;
+    const { collegeEmail, otp } = req.body;
     const user = req.user;
 
     if (!user) {
@@ -224,19 +248,21 @@ router.post('/verify-college', authMiddleware, async (req: AuthRequest, res: Res
       return;
     }
 
-    if (!otp) {
+    if (!collegeEmail || !otp) {
       res.status(400).json({
         success: false,
-        error: 'OTP is required',
+        error: 'College email and OTP are required',
         code: 'VALIDATION_ERROR',
       });
       return;
     }
 
+    const normalizedEmail = collegeEmail.toLowerCase().trim();
+
     // Find valid OTP
     const otpDoc = await OTP.findOne({
-      email: user.email,
-      purpose: 'verification',
+      email: normalizedEmail,
+      purpose: 'college-verification',
       expiresAt: { $gt: new Date() },
     }).sort({ createdAt: -1 });
 
@@ -249,7 +275,7 @@ router.post('/verify-college', authMiddleware, async (req: AuthRequest, res: Res
       return;
     }
 
-    if (otpDoc.otp !== otp) {
+    if (otpDoc.otp !== otp.trim()) {
       res.status(400).json({
         success: false,
         error: 'Invalid OTP',
@@ -258,15 +284,25 @@ router.post('/verify-college', authMiddleware, async (req: AuthRequest, res: Res
       return;
     }
 
-    // Update user
-    await User.findByIdAndUpdate(user._id, { isVerified: true });
+    // Update user as college verified
+    const updatedUser = await User.findByIdAndUpdate(
+      user._id,
+      { isCollegeVerified: true },
+      { new: true }
+    ).select('-password');
 
     // Delete used OTP
-    await OTP.deleteOne({ _id: otpDoc._id });
+    await OTP.deleteMany({ email: normalizedEmail, purpose: 'college-verification' });
+
+    console.log(`[College Verification] ✅ User ${updatedUser?.email} college verified: ${updatedUser?.collegeName}`);
 
     res.json({
       success: true,
-      message: 'College email verified successfully',
+      message: 'College email verified successfully! You can now submit safety reports.',
+      data: {
+        isCollegeVerified: true,
+        collegeName: updatedUser?.collegeName,
+      },
     });
   } catch (error) {
     console.error('Verify college OTP error:', error);

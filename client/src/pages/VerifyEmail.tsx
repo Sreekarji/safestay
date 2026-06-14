@@ -1,82 +1,169 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Shield } from 'lucide-react';
-import { OTPVerification } from '@/components/auth/OTPVerification';
-import { useAuthStore } from '@/stores/authStore';
-import { API_URL } from '@/lib/constants';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
-export function VerifyEmail() {
+export default function VerifyEmail() {
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const navigate = useNavigate();
-  const { token, user } = useAuthStore();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const location = useLocation();
+  const emailFromState = location.state?.email || '';
 
-  const handleSubmit = async (otp: string) => {
+  const [email, setEmail] = useState(emailFromState);
+  const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+  const [countdown, setCountdown] = useState(0);
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [countdown]);
+
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setMessage('');
+    setLoading(true);
+
     try {
-      setLoading(true);
-      setError(null);
-      const res = await fetch(`${API_URL}/api/otp/verify-email`, {
+      const response = await fetch(`${API}/api/otp/verify-email`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ otp }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), otp: otp.trim() })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.error || 'Verification failed');
-      navigate('/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Verification failed');
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage(data.message);
+        setTimeout(() => navigate('/login'), 2000);
+      } else {
+        setError(data.message);
+      }
+    } catch {
+      setError('Error connecting to server');
     } finally {
       setLoading(false);
     }
   };
 
   const handleResend = async () => {
+    if (countdown > 0 || !email.trim()) return;
+    setError('');
+    setMessage('');
+    setResendLoading(true);
+
     try {
-      setError(null);
-      const res = await fetch(`${API_URL}/api/otp/resend-verify-email`, {
+      const response = await fetch(`${API}/api/otp/send-verification`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() })
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || data.error || 'Failed to resend OTP');
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP');
+
+      const data = await response.json();
+
+      if (data.success) {
+        setMessage('New OTP sent to your email!');
+        setCountdown(60);
+      } else {
+        setError(data.message);
+      }
+    } catch {
+      setError('Error connecting to server');
+    } finally {
+      setResendLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
-          <div className="text-center mb-8">
-            <div className="flex justify-center mb-3">
-              <Shield className="h-10 w-10 text-primary-600" />
-            </div>
-            <h1 className="text-2xl font-bold text-slate-900">Verify Your Email</h1>
-            <p className="text-sm text-slate-500 mt-1">Enter the 6-digit code sent to your email</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-lg p-8">
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-3xl">📧</span>
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">Verify Your Email</h1>
+          <p className="text-gray-500 mt-2">
+            We sent a 6-digit code to your email.
+            Enter it below to verify your account.
+          </p>
+        </div>
+
+        <form onSubmit={handleVerify} className="space-y-5">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              placeholder="Enter your email"
+              required
+              disabled={!!emailFromState}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Verification Code</label>
+            <input
+              type="text"
+              value={otp}
+              onChange={(e) => {
+                const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                setOtp(value);
+              }}
+              className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-center text-2xl tracking-widest font-bold"
+              placeholder="000000"
+              maxLength={6}
+              required
+            />
           </div>
 
           {error && (
-            <div className="rounded-lg bg-red-50 border border-red-200 p-3 mb-4">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
+            <p className="text-red-600 text-sm font-medium bg-red-50 px-4 py-2 rounded-lg">{error}</p>
           )}
 
-          <OTPVerification
-            onSubmit={handleSubmit}
-            onResend={handleResend}
-            loading={loading}
-            email={user?.email}
-          />
+          {message && (
+            <p className="text-green-600 text-sm font-medium bg-green-50 px-4 py-2 rounded-lg">{message}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || otp.length !== 6}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-colors disabled:bg-blue-400"
+          >
+            {loading ? 'Verifying...' : 'Verify Email'}
+          </button>
+        </form>
+
+        <div className="mt-6 text-center">
+          <p className="text-gray-500 text-sm">Didn't receive the code?</p>
+          <button
+            onClick={handleResend}
+            disabled={resendLoading || countdown > 0}
+            className="text-blue-600 hover:text-blue-800 font-medium text-sm mt-1 disabled:text-gray-400"
+          >
+            {resendLoading
+              ? 'Sending...'
+              : countdown > 0
+                ? `Resend in ${countdown}s`
+                : 'Resend Code'
+            }
+          </button>
         </div>
-      </motion.div>
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => navigate('/login')}
+            className="text-gray-500 hover:text-gray-700 text-sm"
+          >
+            ← Back to Login
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

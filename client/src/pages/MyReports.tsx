@@ -1,593 +1,528 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FileText,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  Eye,
-  Edit3,
-  Trash2,
-  Filter,
-  Search,
-  ArrowLeft,
-  MapPin,
-  ThumbsUp,
-  MessageSquare,
-  X,
-  Shield,
-  Image,
-} from 'lucide-react';
-import { ScrollReveal, StaggerReveal } from '@/components/ParallaxEffect';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { formatRelativeTime, getStatusColor, formatDate } from '@/lib/utils';
-import { useAuthStore } from '@/stores/authStore';
-import { API_URL } from '@/lib/constants';
-import type { Report } from '@/types';
-import toast from 'react-hot-toast';
+import { useAuth } from '../contexts/AuthContext'; // ✅ ADDED
+import { ImageUpload } from '../components/ImageUpload';
+import ReportCard from '../components/ReportCard';
+import { 
+  FiFileText, FiAlertTriangle, FiCheckCircle, FiClock, 
+  FiEdit2, FiTrash2, FiPlus, FiArrowLeft, FiFilter, FiSearch,
+  FiTool, FiCheck, FiX, FiAward,
+  FiArrowRight, // ✅ ADDED - was missing!
+  FiUpload      // ✅ ADDED - was missing!
+} from 'react-icons/fi';
 
-const API = API_URL;
+interface Image {
+  url: string;
+  publicId?: string;
+}
 
-const CATEGORY_LABELS: Record<string, string> = {
-  fire_safety: 'Fire Safety',
-  water_quality: 'Water Quality',
-  structural: 'Structural',
-  electrical: 'Electrical',
-  hygiene: 'Hygiene',
-  security: 'Security',
-  food_safety: 'Food Safety',
-  other: 'Other',
-};
+interface Resolution {
+  description: string;
+  actionTaken: string;
+  images: Array<{ url: string; publicId: string }>;
+  resolvedBy?: { name: string } | string;
+  resolvedAt?: string;
+}
 
-const CATEGORY_COLORS: Record<string, string> = {
-  fire_safety: 'bg-red-100 text-red-700',
-  water_quality: 'bg-blue-100 text-blue-700',
-  structural: 'bg-orange-100 text-orange-700',
-  electrical: 'bg-yellow-100 text-yellow-700',
-  hygiene: 'bg-purple-100 text-purple-700',
-  security: 'bg-indigo-100 text-indigo-700',
-  food_safety: 'bg-emerald-100 text-emerald-700',
-  other: 'bg-slate-100 text-slate-700',
-};
+interface Verification {
+  isVerified: boolean;
+  verifiedBy?: string;
+  verifiedAt?: string;
+  feedback?: string;
+  isDisputed: boolean;
+  disputeReason?: string;
+}
 
-const SEVERITY_CONFIG: Record<number, { text: string; color: string }> = {
-  1: { text: 'Low', color: 'text-emerald-600 bg-emerald-50' },
-  2: { text: 'Low', color: 'text-emerald-600 bg-emerald-50' },
-  3: { text: 'Low', color: 'text-emerald-600 bg-emerald-50' },
-  4: { text: 'Medium', color: 'text-amber-600 bg-amber-50' },
-  5: { text: 'Medium', color: 'text-amber-600 bg-amber-50' },
-  6: { text: 'Medium', color: 'text-amber-600 bg-amber-50' },
-  7: { text: 'High', color: 'text-orange-600 bg-orange-50' },
-  8: { text: 'High', color: 'text-red-600 bg-red-50' },
-  9: { text: 'Critical', color: 'text-red-600 bg-red-50' },
-  10: { text: 'Critical', color: 'text-red-600 bg-red-50' },
-};
+interface Report {
+  _id: string;
+  accommodationName: string;
+  accommodationId?: string;
+  issueType: string;
+  description: string;
+  images?: Image[];
+  createdAt: string;
+  status?: string;
+  upvotes?: number;
+  upvotedBy?: string[];
+  user?: string;
+  resolution?: Resolution;
+  verification?: Verification;
+}
 
-const STATUS_TABS = [
-  { key: 'all', label: 'All', icon: FileText },
-  { key: 'pending', label: 'Pending', icon: Clock },
-  { key: 'approved', label: 'Approved', icon: CheckCircle },
-  { key: 'resolved', label: 'Resolved', icon: CheckCircle },
-  { key: 'disputed', label: 'Disputed', icon: AlertTriangle },
-] as const;
-
-type TabKey = (typeof STATUS_TABS)[number]['key'];
-
-export function MyReports() {
-  const { user } = useAuthStore();
-  const navigate = useNavigate();
-
+export default function MyReports() {
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const { token } = useAuth(); // ✅ ADDED - get token from context
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [activeFilter, setActiveFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState(''); // ✅ ADDED - for search functionality
+  const [editingReport, setEditingReport] = useState<Report | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    accommodationName: '',
+    issueType: '',
+    description: ''
+  });
+  const [editImages, setEditImages] = useState<{url: string; publicId: string}[]>([]);
+  const [editLoading, setEditLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
+  const navigate = useNavigate();
 
-  // Fetch user's reports
+  // ✅ FIXED: Extract user ID with token dependency
   useEffect(() => {
-    async function loadReports() {
-      try {
-        setLoading(true);
-        const token = useAuthStore.getState().token;
-        const res = await fetch(`${API}/api/reports/my-reports`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error('Failed to load reports');
-        const body = await res.json();
-        const data = body.data || body;
-        const reportsList: Report[] = Array.isArray(data) ? data : data.reports || [];
-        // Sort by newest first
-        const sorted = reportsList.sort(
-          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        setReports(sorted);
-      } catch (err: any) {
-        console.error('My reports fetch error:', err);
-        setError('Could not load your reports. Please try again.');
-      } finally {
-        setLoading(false);
-      }
+    if (!token) {
+      setCurrentUserId('');
+      return;
     }
-    loadReports();
-  }, []);
-
-  // Filter reports by tab and search
-  const filteredReports = useMemo(() => {
-    let result = reports;
-
-    // Tab filter
-    if (activeTab !== 'all') {
-      if (activeTab === 'pending') {
-        result = result.filter((r) => r.status === 'pending');
-      } else if (activeTab === 'approved') {
-        result = result.filter((r) => r.status === 'approved' || r.status === 'ai_verified' || r.status === 'verified');
-      } else if (activeTab === 'resolved') {
-        result = result.filter((r) => r.status === 'resolved');
-      } else if (activeTab === 'disputed') {
-        result = result.filter((r) => r.status === 'disputed' || r.status === 'rejected');
-      }
-    }
-
-    // Search filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (r) =>
-          r.title.toLowerCase().includes(q) ||
-          r.description.toLowerCase().includes(q) ||
-          (CATEGORY_LABELS[r.category] || r.category).toLowerCase().includes(q)
-      );
-    }
-
-    return result;
-  }, [reports, activeTab, searchQuery]);
-
-  // Tab counts
-  const tabCounts = useMemo(() => {
-    const counts: Record<TabKey, number> = {
-      all: reports.length,
-      pending: 0,
-      approved: 0,
-      resolved: 0,
-      disputed: 0,
-    };
-    for (const r of reports) {
-      if (r.status === 'pending') counts.pending++;
-      else if (r.status === 'approved' || r.status === 'ai_verified' || r.status === 'verified') counts.approved++;
-      else if (r.status === 'resolved') counts.resolved++;
-      else if (r.status === 'disputed' || r.status === 'rejected') counts.disputed++;
-    }
-    return counts;
-  }, [reports]);
-
-  // Delete handler
-  const handleDelete = async (reportId: string) => {
+    
     try {
-      setDeletingId(reportId);
-      const token = useAuthStore.getState().token;
-      const res = await fetch(`${API}/api/reports/${reportId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      setCurrentUserId(payload.user?._id || payload.user?.id || payload.id || payload.userId || '');
+    } catch {
+      setCurrentUserId('');
+    }
+  }, [token]); // ✅ Re-run when token changes
+
+  // ✅ FIXED: Fetch reports when token is available
+  useEffect(() => {
+    if (token) {
+      fetchMyReports();
+    }
+  }, [token, API]); // ✅ Added token dependency
+
+  const fetchMyReports = async () => {
+    if (!token) {
+      setError('Please login to view your reports');
+      setLoading(false);
+      navigate('/login');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`${API}/api/reports/my-reports`, {
+        headers: {
+          'Authorization': `Bearer ${token}`, // ✅ Use token from context
+          'Content-Type': 'application/json'
+        }
       });
-      if (!res.ok) throw new Error('Failed to delete report');
-      setReports((prev) => prev.filter((r) => r._id !== reportId));
-      setDeleteConfirmId(null);
-      toast.success('Report deleted successfully');
-    } catch (err: any) {
-      console.error('Delete error:', err);
-      toast.error('Failed to delete report. Please try again.');
+      const data = await response.json();
+      if (data.success) {
+        setReports(data.data || data.reports || []);
+      } else {
+        setError(data.message || 'Failed to fetch reports');
+      }
+    } catch (err) {
+      setError('Error connecting to server');
     } finally {
-      setDeletingId(null);
+      setLoading(false);
     }
   };
 
-  // Loading skeleton
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
-        <div className="animate-pulse">
-          <div className="h-48 bg-gradient-to-r from-primary-600 to-indigo-600" />
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16">
-            <div className="h-12 bg-white rounded-xl shadow-sm mb-6" />
-            <div className="space-y-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-32 bg-white rounded-xl shadow-sm" />
-              ))}
-            </div>
-          </div>
-        </div>
+  const handleEdit = (report: Report) => {
+    setEditingReport(report);
+    setEditFormData({
+      accommodationName: report.accommodationName,
+      issueType: report.issueType,
+      description: report.description
+    });
+    setEditImages((report.images || []).map(img => ({
+      url: img.url,
+      publicId: img.publicId || img.url
+    })));
+  };
+
+  const handleCancelEdit = () => {
+    setEditingReport(null);
+    setEditImages([]);
+  };
+
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingReport || !token) return;
+    setEditLoading(true);
+
+    try {
+      const response = await fetch(`${API}/api/reports/${editingReport._id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...editFormData,
+          images: editImages
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setEditingReport(null);
+        fetchMyReports();
+      } else {
+        alert(data.message || 'Failed to update report');
+      }
+    } catch (err) {
+      alert('Error updating report');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async (reportId: string) => {
+    if (!window.confirm('Delete this report? This cannot be undone.')) return;
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`${API}/api/reports/${reportId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (data.success) {
+        fetchMyReports();
+      }
+    } catch (err) {
+      alert('Error deleting report');
+    }
+  };
+
+  const handleVerify = async (id: string, accepted: boolean, feedbackOrReason: string) => {
+    if (!token) return;
+    
+    try {
+      const response = await fetch(`${API}/api/reports/${id}/verify`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          accepted,
+          feedback: accepted ? feedbackOrReason : '',
+          disputeReason: !accepted ? feedbackOrReason : ''
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        fetchMyReports();
+      }
+    } catch (err) {
+      alert('Error verifying resolution');
+    }
+  };
+
+  // ✅ FIXED: Filter with search functionality
+  const filteredReports = reports.filter(r => {
+    // Status filter
+    const statusMatch = 
+      activeFilter === 'all' ? true :
+      activeFilter === 'pending' ? r.status === 'pending' :
+      activeFilter === 'approved' ? r.status === 'approved' :
+      activeFilter === 'resolved' ? r.status === 'resolved' :
+      activeFilter === 'verified' ? r.status === 'verified' :
+      activeFilter === 'disputed' ? r.status === 'disputed' :
+      true;
+    
+    // Search filter
+    const searchMatch = searchQuery === '' ? true :
+      r.accommodationName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.issueType.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      r.description.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    return statusMatch && searchMatch;
+  });
+
+  const stats = [
+    { label: 'Total Contributions', value: reports.length, icon: <FiFileText />, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Pending Review', value: reports.filter(r => r.status === 'pending').length, icon: <FiClock />, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { label: 'Owner Responded', value: reports.filter(r => r.status === 'resolved').length, icon: <FiTool />, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { label: 'Issues Verified', value: reports.filter(r => r.status === 'verified').length, icon: <FiCheckCircle />, color: 'text-green-600', bg: 'bg-green-50' },
+  ];
+
+  // ✅ Show loading while waiting for token
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <p className="mt-4 text-gray-600 font-medium">Loading your reports...</p>
       </div>
-    );
-  }
+    </div>
+  );
+
+  // ✅ Show error state
+  if (error) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="max-w-md w-full bg-white p-8 rounded-2xl shadow-xl text-center">
+        <div className="bg-red-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <FiAlertTriangle className="h-8 w-8 text-red-600" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 mb-2">Error Loading Reports</h2>
+        <p className="text-gray-600 mb-6">{error}</p>
+        <button 
+          onClick={() => {
+            setError('');
+            if (token) fetchMyReports();
+          }}
+          className="w-full py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all"
+        >
+          Try Again
+        </button>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen bg-gray-50 pb-24">
       {/* Header */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImVub3Zsb3kiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0djJoLTJ2LTJoMnptMCAyMHYyaC0ydi0yaDJ6TTIwIDM0djJoLTJ2LTJoMnpNMzQgMjB2MmgtMnYtMmgyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
-          <ScrollReveal>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-white/80 hover:text-white hover:bg-white/10"
-                    onClick={() => navigate('/dashboard')}
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </Button>
-                  <Shield className="h-7 w-7 text-white/80" strokeWidth={1.5} />
-                  <span className="text-sm font-medium text-white/70 uppercase tracking-wider">
-                    My Reports
-                  </span>
-                </div>
-                <h1 className="text-3xl lg:text-4xl font-bold text-white">
-                  Your Safety Reports
-                </h1>
-                <p className="mt-2 text-lg text-primary-100">
-                  Track, manage, and review all your submitted reports.
-                </p>
-              </div>
-              <div className="mt-6 sm:mt-0">
-                <Link to="/report/new">
-                  <Button className="bg-white text-primary-700 hover:bg-primary-50 shadow-lg">
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    New Report
-                  </Button>
-                </Link>
-              </div>
+      <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 pt-16 pb-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-blue-600/5 mix-blend-overlay"></div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <Link to="/dashboard" className="inline-flex items-center text-blue-300 hover:text-white mb-10 font-bold transition-all gap-2">
+            <FiArrowLeft /> Back to Dashboard
+          </Link>
+          
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+            <div>
+              <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tight mb-4">
+                Your Safety Reports
+              </h1>
+              <p className="text-xl text-blue-200 font-medium max-w-2xl">
+                Track the impact of your contributions and manage your verified safety reports.
+              </p>
             </div>
-          </ScrollReveal>
+            <Link
+              to="/report"
+              className="bg-white text-slate-900 px-8 py-4 rounded-2xl font-black shadow-xl hover:bg-blue-50 transition-all flex items-center gap-2 whitespace-nowrap"
+            >
+              <FiPlus className="text-xl" /> Report New Issue
+            </Link>
+          </div>
+
+          {/* Header Stats Row */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-12">
+            {stats.map((stat, i) => (
+              <div key={i} className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[2rem] flex items-center gap-4">
+                <div className={`w-12 h-12 ${stat.bg} ${stat.color} rounded-2xl flex items-center justify-center text-xl`}>
+                  {stat.icon}
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-white">{stat.value}</p>
+                  <p className="text-[10px] font-black text-blue-200/60 uppercase tracking-widest leading-none">{stat.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-8 pb-12">
-        {/* Search & Filter Bar */}
-        <ScrollReveal delay={100}>
-          <Card className="bg-white shadow-sm border-0 mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-col sm:flex-row gap-4">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search reports by title or description..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm rounded-lg border border-slate-200 bg-slate-50 focus:bg-white focus:border-primary-300 focus:ring-2 focus:ring-primary-100 outline-none transition-all text-slate-900 placeholder:text-slate-400"
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={() => setSearchQuery('')}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  )}
-                </div>
-                {/* Filter indicator */}
-                <div className="flex items-center gap-2 text-sm text-slate-500">
-                  <Filter className="h-4 w-4" />
-                  <span>{filteredReports.length} report{filteredReports.length !== 1 ? 's' : ''}</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </ScrollReveal>
-
-        {/* Tab Filters */}
-        <ScrollReveal delay={150}>
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide" role="tablist">
-            {STATUS_TABS.map((tab) => {
-              const isActive = activeTab === tab.key;
-              const Icon = tab.icon;
-              return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10 relative z-20">
+        {/* Filters Card */}
+        <div className="bg-white rounded-3xl shadow-xl p-6 lg:p-8 mb-10 border border-gray-100">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+            <div className="flex gap-2 flex-wrap items-center">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest mr-2 flex items-center gap-2">
+                <FiFilter /> Filter By
+              </span>
+              {[
+                { id: 'all', label: 'All Reports' },
+                { id: 'pending', label: '⏳ Pending' },
+                { id: 'approved', label: '✅ Published' },
+                { id: 'resolved', label: '🔧 Resolved' },
+                { id: 'verified', label: '🎉 Verified' },
+                { id: 'disputed', label: '⚠️ Disputed' }
+              ].map(filter => (
                 <button
-                  key={tab.key}
-                  onClick={() => setActiveTab(tab.key)}
-                  role="tab"
-                  aria-selected={isActive}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
-                    isActive
-                      ? 'bg-primary-600 text-white shadow-md shadow-primary-200'
-                      : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id)}
+                  className={`px-5 py-2.5 rounded-xl text-sm font-bold transition-all duration-200 ${
+                    activeFilter === filter.id 
+                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                      : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
                   }`}
                 >
-                  <Icon className="h-4 w-4" />
-                  <span>{tab.label}</span>
-                  <span
-                    className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-bold ${
-                      isActive
-                        ? 'bg-white/20 text-white'
-                        : 'bg-slate-100 text-slate-500'
-                    }`}
-                  >
-                    {tabCounts[tab.key]}
-                  </span>
+                  {filter.label}
                 </button>
-              );
-            })}
+              ))}
+            </div>
+            
+            <div className="relative w-full md:w-64">
+              <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input 
+                type="text" 
+                placeholder="Search your reports..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-transparent rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-sm font-bold text-gray-700"
+              />
+            </div>
           </div>
-        </ScrollReveal>
+        </div>
 
-        {/* Error State */}
-        {error && (
-          <Card className="bg-white border-red-200 mb-6">
-            <CardContent className="p-6 text-center">
-              <AlertTriangle className="h-10 w-10 text-red-400 mx-auto mb-3" />
-              <p className="text-slate-700 font-medium">{error}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3"
-                onClick={() => window.location.reload()}
+        {/* Content Section */}
+        {filteredReports.length === 0 ? (
+          <div className="text-center py-24 bg-white rounded-[2.5rem] shadow-sm border border-gray-100 max-w-2xl mx-auto">
+            <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-8">
+              <FiFileText className="text-gray-300 text-4xl" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 mb-2">
+              {reports.length === 0 
+                ? "You haven't filed any reports yet" 
+                : "No reports match your filters"
+              }
+            </h3>
+            <p className="text-slate-500 font-medium mb-10 max-w-sm mx-auto px-4">
+              {reports.length === 0 
+                ? "Spotted a safety issue? Your voice matters! Your contributions can protect thousands of other students."
+                : "Try adjusting your filters or search query."
+              }
+            </p>
+            {reports.length === 0 ? (
+              <Link 
+                to="/report" 
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-4 rounded-2xl font-black shadow-xl shadow-blue-500/25 hover:shadow-2xl transition-all inline-flex items-center gap-2"
               >
-                Try Again
-              </Button>
-            </CardContent>
-          </Card>
+                Report an Issue <FiArrowRight />
+              </Link>
+            ) : (
+              <button 
+                onClick={() => {
+                  setActiveFilter('all');
+                  setSearchQuery('');
+                }}
+                className="bg-gray-100 text-gray-700 px-10 py-4 rounded-2xl font-black hover:bg-gray-200 transition-all inline-flex items-center gap-2"
+              >
+                Clear Filters <FiX />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-10">
+            {filteredReports.map((report) => (
+              <ReportCard
+                key={report._id}
+                report={report}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onVerify={handleVerify}
+                currentUserId={currentUserId}
+              />
+            ))}
+          </div>
         )}
 
-        {/* Empty State */}
-        {!error && !loading && filteredReports.length === 0 && (
-          <Card className="bg-white shadow-sm border-0">
-            <CardContent className="py-16 px-4 text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary-50 mx-auto mb-5">
-                <FileText className="h-10 w-10 text-primary-600" />
+        {/* Impact Message */}
+        <div className="mt-16 p-10 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-10 opacity-10">
+            <FiAward className="w-48 h-48 text-white" />
+          </div>
+          <div className="relative z-10 max-w-3xl">
+            <h3 className="text-3xl font-black text-white mb-4">Safety Champion Status</h3>
+            <p className="text-xl text-blue-100 font-medium mb-8">
+              Your verified reports have helped thousands of students make safer housing choices. Keep contributing to build a more transparent accommodation network.
+            </p>
+            <div className="flex items-center gap-6">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4, 5].map(i => (
+                  <div key={i} className="w-12 h-12 rounded-full border-4 border-blue-600 bg-blue-100 flex items-center justify-center font-black text-blue-600 text-xs">
+                    {String.fromCharCode(64 + i)}
+                  </div>
+                ))}
               </div>
-              <h3 className="text-xl font-semibold text-slate-900 mb-2">
-                {activeTab === 'all' && !searchQuery
-                  ? 'No reports yet'
-                  : 'No matching reports'}
-              </h3>
-              <p className="text-sm text-slate-500 max-w-sm mx-auto mb-6">
-                {activeTab === 'all' && !searchQuery
-                  ? "You haven't submitted any safety reports yet. Start by reporting an issue to help keep your accommodation safe."
-                  : 'Try adjusting your filters or search query to find what you\'re looking for.'}
-              </p>
-              {activeTab === 'all' && !searchQuery ? (
-                <Link to="/report/new">
-                  <Button>
-                    <AlertTriangle className="h-4 w-4 mr-2" />
-                    Report Your First Issue
-                  </Button>
-                </Link>
-              ) : (
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setActiveTab('all');
-                    setSearchQuery('');
-                  }}
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Report Cards */}
-        {!error && filteredReports.length > 0 && (
-          <StaggerReveal stagger={80}>
-            <div className="space-y-4">
-              {filteredReports.map((report, idx) => {
-                const severity = SEVERITY_CONFIG[report.severity] || {
-                  text: 'Unknown',
-                  color: 'text-slate-500 bg-slate-50',
-                };
-                const accommodation =
-                  typeof report.accommodationId === 'object' && report.accommodationId !== null
-                    ? (report.accommodationId as any)
-                    : null;
-                const isPending = report.status === 'pending';
-                const isDeleting = deletingId === report._id;
-                const isConfirmingDelete = deleteConfirmId === report._id;
-
-                return (
-                  <motion.div
-                    key={report._id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                  >
-                    <Card className="bg-white shadow-sm border-0 hover:shadow-md transition-shadow overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="p-5">
-                          {/* Top row: title + status */}
-                          <div className="flex items-start justify-between gap-3 mb-3">
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-base font-semibold text-slate-900 line-clamp-1">
-                                {report.title}
-                              </h3>
-                              <p className="mt-1 text-sm text-slate-500 line-clamp-2">
-                                {report.description}
-                              </p>
-                            </div>
-                            <Badge
-                              className={`shrink-0 text-xs ml-2 ${getStatusColor(report.status)}`}
-                            >
-                              {report.status.replace('_', ' ')}
-                            </Badge>
-                          </div>
-
-                          {/* Badges row */}
-                          <div className="flex flex-wrap gap-2 mb-3">
-                            <span
-                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${
-                                CATEGORY_COLORS[report.category] || 'bg-slate-100 text-slate-600'
-                              }`}
-                            >
-                              {CATEGORY_LABELS[report.category] || report.category}
-                            </span>
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${severity.color}`}
-                            >
-                              Severity {report.severity}/10 &middot; {severity.text}
-                            </span>
-                          </div>
-
-                          {/* Image thumbnails */}
-                          {report.images && report.images.length > 0 && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className="flex -space-x-2">
-                                {report.images.slice(0, 3).map((img, i) => (
-                                  <div
-                                    key={i}
-                                    className="h-10 w-10 rounded-lg border-2 border-white overflow-hidden bg-slate-100"
-                                  >
-                                    <img
-                                      src={img}
-                                      alt={`Report image ${i + 1}`}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  </div>
-                                ))}
-                                {report.images.length > 3 && (
-                                  <div className="h-10 w-10 rounded-lg border-2 border-white bg-slate-200 flex items-center justify-center">
-                                    <span className="text-xs font-bold text-slate-600">
-                                      +{report.images.length - 3}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                              <span className="text-xs text-slate-400 flex items-center gap-1">
-                                <Image className="h-3 w-3" />
-                                {report.images.length} photo{report.images.length !== 1 ? 's' : ''}
-                              </span>
-                            </div>
-                          )}
-
-                          {/* Meta row */}
-                          <div className="flex flex-wrap items-center gap-4 text-xs text-slate-400">
-                            {accommodation && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3" />
-                                {accommodation.name}
-                                {accommodation.area ? `, ${accommodation.area}` : ''}
-                              </span>
-                            )}
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {formatRelativeTime(report.createdAt)}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <ThumbsUp className="h-3 w-3" />
-                              {report.upvotes || 0}
-                            </span>
-                            {report.images && report.images.length > 0 && (
-                              <span className="flex items-center gap-1">
-                                <Image className="h-3 w-3" />
-                                {report.images.length} photo{report.images.length !== 1 ? 's' : ''}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Action bar */}
-                        <div className="flex items-center border-t border-slate-100 bg-slate-50/50 px-5 py-3 gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-slate-600 hover:text-primary-600 hover:bg-primary-50"
-                            onClick={() => navigate(`/report/${report._id}`)}
-                          >
-                            <Eye className="h-4 w-4 mr-1.5" />
-                            View Detail
-                          </Button>
-
-                          {isPending && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-slate-600 hover:text-amber-600 hover:bg-amber-50"
-                              onClick={() => navigate(`/report/${report._id}/edit`)}
-                            >
-                              <Edit3 className="h-4 w-4 mr-1.5" />
-                              Edit
-                            </Button>
-                          )}
-
-                          <div className="flex-1" />
-
-                          {/* Delete with confirmation */}
-                          <AnimatePresence mode="wait">
-                            {isConfirmingDelete ? (
-                              <motion.div
-                                key="confirm"
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="flex items-center gap-2"
-                              >
-                                <span className="text-xs text-red-600 font-medium">Delete?</span>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  disabled={isDeleting}
-                                  onClick={() => handleDelete(report._id)}
-                                  className="h-8"
-                                >
-                                  {isDeleting ? (
-                                    <span className="flex items-center gap-1">
-                                      <span className="h-3 w-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                      ...
-                                    </span>
-                                  ) : (
-                                    'Yes'
-                                  )}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-8"
-                                  onClick={() => setDeleteConfirmId(null)}
-                                >
-                                  No
-                                </Button>
-                              </motion.div>
-                            ) : (
-                              <motion.button
-                                key="delete-btn"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-slate-500 hover:text-red-600 hover:bg-red-50 transition-colors"
-                                onClick={() => setDeleteConfirmId(report._id)}
-                              >
-                                <Trash2 className="h-3.5 w-3.5" />
-                                Delete
-                              </motion.button>
-                            )}
-                          </AnimatePresence>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                );
-              })}
+              <p className="text-sm font-bold text-blue-100">Joined by 10,000+ students nationwide</p>
             </div>
-          </StaggerReveal>
-        )}
-
-        {/* Bottom summary */}
-        {!error && filteredReports.length > 0 && (
-          <ScrollReveal delay={300}>
-            <div className="mt-8 text-center text-sm text-slate-400">
-              Showing {filteredReports.length} of {reports.length} report{reports.length !== 1 ? 's' : ''}
-            </div>
-          </ScrollReveal>
-        )}
+          </div>
+        </div>
       </div>
+
+      {/* Edit Modal */}
+      {editingReport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto relative">
+            <div className="p-8 lg:p-12">
+              <div className="flex justify-between items-center mb-10">
+                <div>
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">Edit Your Report</h2>
+                  <p className="text-slate-500 font-bold mt-1 uppercase tracking-widest text-[10px]">Update safety information</p>
+                </div>
+                <button onClick={handleCancelEdit} className="p-3 bg-gray-50 hover:bg-gray-100 rounded-2xl transition-all">
+                  <FiX className="h-6 w-6 text-gray-400" />
+                </button>
+              </div>
+              
+              <form onSubmit={handleUpdateSubmit} className="space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Accommodation Name</label>
+                    <input
+                      type="text"
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold text-slate-900"
+                      value={editFormData.accommodationName}
+                      onChange={(e) => setEditFormData({...editFormData, accommodationName: e.target.value})}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Issue Category</label>
+                    <select
+                      className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none font-bold text-slate-900 appearance-none"
+                      value={editFormData.issueType}
+                      onChange={(e) => setEditFormData({...editFormData, issueType: e.target.value})}
+                      required
+                    >
+                      <option value="Food Safety">Food Safety</option>
+                      <option value="Water Quality">Water Quality</option>
+                      <option value="Hygiene">Hygiene</option>
+                      <option value="Security">Security</option>
+                      <option value="Infrastructure">Infrastructure</option>
+                    </select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1">Description of Issue</label>
+                  <textarea
+                    className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none min-h-[160px] font-medium text-slate-700 leading-relaxed"
+                    value={editFormData.description}
+                    onChange={(e) => setEditFormData({...editFormData, description: e.target.value})}
+                    rows={5}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-1 flex items-center gap-2">
+                    <FiUpload /> Evidence Management
+                  </label>
+                  <div className="bg-gray-50 p-8 rounded-[2rem] border-2 border-dashed border-gray-200">
+                    <ImageUpload
+                      uploadedImages={editImages}
+                      onImagesChange={setEditImages}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-50">
+                  <button 
+                    type="submit" 
+                    className="flex-grow py-5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-black rounded-2xl hover:shadow-2xl hover:shadow-blue-500/25 transition-all disabled:opacity-50"
+                    disabled={editLoading}
+                  >
+                    {editLoading ? 'Processing Updates...' : 'Save & Publish Changes'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={handleCancelEdit} 
+                    className="px-10 py-5 bg-gray-100 text-slate-600 font-black rounded-2xl hover:bg-gray-200 transition-all"
+                  >
+                    Discard
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

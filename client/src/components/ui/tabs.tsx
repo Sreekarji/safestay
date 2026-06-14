@@ -25,7 +25,7 @@ const TabsList = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivEl
   ({ className, ...props }, ref) => (
     <div
       ref={ref}
-      className={cn("inline-flex h-10 items-center justify-center rounded-lg bg-slate-100 p-1 text-slate-500", className)}
+      className={cn("inline-flex h-10 items-center justify-center rounded-pill-sm bg-canvas-soft dark:bg-[#1a1a1a] p-1 text-body dark:text-[#888888] border border-hairline dark:border-[#333333]", className)}
       {...props}
     />
   )
@@ -43,8 +43,8 @@ const TabsTrigger = React.forwardRef<HTMLButtonElement, TabsTriggerProps>(
       <button
         ref={ref}
         className={cn(
-          "inline-flex items-center justify-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ring-offset-white transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:pointer-events-none disabled:opacity-50",
-          ctx.value === value && "bg-white text-slate-900 shadow-sm",
+          "inline-flex items-center justify-center whitespace-nowrap rounded-pill-sm px-3 py-1.5 text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/10 disabled:pointer-events-none disabled:opacity-50",
+          ctx.value === value && "bg-canvas dark:bg-[#111111] text-ink dark:text-white card-shadow-1",
           className
         )}
         onClick={() => ctx.onValueChange(value)}
@@ -63,7 +63,7 @@ const TabsContent = ({ className, value, children, ...props }: TabsContentProps)
   const ctx = React.useContext(TabsContext)
   if (ctx.value !== value) return null
   return (
-    <div className={cn("mt-2 ring-offset-white focus-visible:outline-none", className)} {...props}>
+    <div className={cn("mt-2 focus-visible:outline-none", className)} {...props}>
       {children}
     </div>
   )

@@ -1,566 +1,848 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion } from 'framer-motion';
-import {
-  MapPin,
-  Building2,
-  Save,
-  ArrowLeft,
-  Loader2,
-  Upload,
-  X,
-  Plus,
-  Phone,
-  DollarSign,
-  FileText,
-  CheckCircle,
-} from 'lucide-react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import toast from 'react-hot-toast';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { 
+  FiHome, FiMapPin, FiPhone, FiDollarSign, 
+  FiUsers, FiArrowLeft, FiCheck,
+  FiAlertCircle, FiSave, FiSearch, FiNavigation, FiX, FiEdit3
+} from 'react-icons/fi';
 
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { DEFAULT_MAP_CENTER } from '@/lib/constants';
-import { Card } from '@/components/ui/card';
-import { ScrollReveal, FadeIn } from '@/components/ParallaxEffect';
-import { useAuthStore } from '@/stores/authStore';
-import { cn } from '@/lib/utils';
-import { useTranslation } from 'react-i18next';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-// --- Zod Schema ---
-
-const propertySchema = z.object({
-  name: z.string().min(2, 'Property name must be at least 2 characters'),
-  type: z.enum(['hostel', 'pg', 'apartment', 'other'], {
-    required_error: 'Please select a property type',
-  }),
-  address: z.string().min(5, 'Address must be at least 5 characters'),
-  city: z.string().min(2, 'City is required'),
-  area: z.string().min(2, 'Area / locality is required'),
-  description: z.string().min(20, 'Description must be at least 20 characters'),
-  contactPhone: z
-    .string()
-    .min(10, 'Phone number must be at least 10 digits')
-    .max(15, 'Phone number is too long'),
-  monthlyRent: z
-    .string()
-    .min(1, 'Monthly rent is required')
-    .refine((v) => !isNaN(Number(v)) && Number(v) > 0, 'Rent must be a positive number'),
-  roomTypes: z.array(z.string()).min(1, 'Select at least one room type'),
-});
-
-type PropertyFormData = z.infer<typeof propertySchema>;
-
-// --- Constants ---
-
-const PROPERTY_TYPES = [
-  { value: 'hostel', label: 'Hostel' },
-  { value: 'pg', label: 'Paying Guest (PG)' },
-  { value: 'apartment', label: 'Apartment' },
-  { value: 'other', label: 'Other' },
-];
-
-const ROOM_TYPE_OPTIONS = ['Single', 'Double', 'Triple', 'Dormitory', 'Studio', '1BHK', '2BHK', '3BHK'];
-
-
-// Custom marker icon (fixes default Leaflet icon path issue in bundlers)
-const defaultMarkerIcon = new L.Icon({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
+// Fix for default marker icon in Leaflet
+const defaultIcon = L.icon({
+  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
-  shadowSize: [41, 41],
+  shadowSize: [41, 41]
 });
 
-// --- Map Click Handler ---
+L.Marker.prototype.options.icon = defaultIcon;
 
-interface MapClickHandlerProps {
-  onLocationSelect: (lat: number, lng: number) => void;
-}
+// Custom marker for selected location
+const selectedIcon = L.icon({
+  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  iconSize: [25, 41],
+  iconAnchor: [12, 41],
+  popupAnchor: [1, -34],
+  shadowSize: [41, 41]
+});
 
-function MapClickHandler({ onLocationSelect }: MapClickHandlerProps) {
+// Component to handle map clicks
+function LocationMarker({ 
+  position, 
+  setPosition 
+}: { 
+  position: [number, number] | null; 
+  setPosition: (pos: [number, number]) => void;
+}) {
   useMapEvents({
     click(e) {
-      onLocationSelect(e.latlng.lat, e.latlng.lng);
+      setPosition([e.latlng.lat, e.latlng.lng]);
     },
   });
+
+  return position ? (
+    <Marker position={position} icon={selectedIcon} />
+  ) : null;
+}
+
+// Component to fly to location
+function FlyToLocation({ position }: { position: [number, number] | null }) {
+  const map = useMap();
+  
+  useEffect(() => {
+    if (position) {
+      map.flyTo(position, 16, { duration: 1.5 });
+    }
+  }, [position, map]);
+  
   return null;
 }
 
-// --- Main Component ---
+// Component for search functionality
+function SearchControl({ 
+  onLocationSelect 
+}: { 
+  onLocationSelect: (lat: number, lng: number, address: string) => void;
+}) {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<any[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showResults, setShowResults] = useState(false);
 
-export default function AddProperty() {
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
-  const { token } = useAuthStore();
-  const editId = searchParams.get('edit');
-
-  const [markerPosition, setMarkerPosition] = useState<[number, number] | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [loadingProperty, setLoadingProperty] = useState(!!editId);
-  const [selectedRoomTypes, setSelectedRoomTypes] = useState<string[]>([]);
-
-  const isEditMode = Boolean(editId);
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    reset,
-    watch,
-    formState: { errors },
-  } = useForm<PropertyFormData>({
-    resolver: zodResolver(propertySchema),
-    defaultValues: {
-      name: '',
-      type: undefined,
-      address: '',
-      city: '',
-      area: '',
-      description: '',
-      contactPhone: '',
-      monthlyRent: '',
-      roomTypes: [],
-    },
-  });
-
-  // Fetch existing property in edit mode
-  useEffect(() => {
-    if (!editId) return;
-    setLoadingProperty(true);
-    fetch(`${API}/api/owner/properties/${editId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then((res) => res.json())
-      .then((json) => {
-        const prop = json.data || json;
-        reset({
-          name: prop.name || '',
-          type: prop.type || undefined,
-          address: prop.address || '',
-          city: prop.city || '',
-          area: prop.area || '',
-          description: prop.description || '',
-          contactPhone: prop.contactPhone || '',
-          monthlyRent: prop.monthlyRent != null ? String(prop.monthlyRent) : '',
-          roomTypes: prop.roomTypes || [],
-        });
-        setSelectedRoomTypes(prop.roomTypes || []);
-        if (prop.location?.coordinates) {
-          // GeoJSON stores [lng, lat]
-          setMarkerPosition([prop.location.coordinates[1], prop.location.coordinates[0]]);
-        }
-      })
-      .catch(() => toast.error(t('owner.addProperty.failedToLoad')))
-      .finally(() => setLoadingProperty(false));
-  }, [editId, token, reset]);
-
-  // Sync roomTypes into form whenever selection changes
-  useEffect(() => {
-    setValue('roomTypes', selectedRoomTypes, { shouldValidate: true });
-  }, [selectedRoomTypes, setValue]);
-
-  const handleLocationSelect = useCallback((lat: number, lng: number) => {
-    setMarkerPosition([lat, lng]);
-  }, []);
-
-  const toggleRoomType = (rt: string) => {
-    setSelectedRoomTypes((prev) =>
-      prev.includes(rt) ? prev.filter((r) => r !== rt) : [...prev, rt]
-    );
+  const searchLocation = async () => {
+    if (!query.trim()) return;
+    
+    setSearching(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`
+      );
+      const data = await response.json();
+      setResults(data);
+      setShowResults(true);
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setSearching(false);
+    }
   };
 
-  const onSubmit = async (data: PropertyFormData) => {
-    if (!markerPosition) {
-      toast.error(t('owner.addProperty.locationRequired'));
+  const handleSelect = (result: any) => {
+    onLocationSelect(
+      parseFloat(result.lat),
+      parseFloat(result.lon),
+      result.display_name
+    );
+    setQuery(result.display_name.split(',')[0]);
+    setShowResults(false);
+  };
+
+  return (
+    <div className="relative">
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && searchLocation()}
+            placeholder="Search location (e.g., Hitech City, Hyderabad)"
+            className="w-full pl-12 pr-4 py-3 bg-white border-2 border-slate-200 rounded-xl focus:border-emerald-500 outline-none transition-all font-semibold text-sm"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => { setQuery(''); setResults([]); setShowResults(false); }}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <FiX />
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={searchLocation}
+          disabled={searching}
+          className="px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 flex items-center gap-2"
+        >
+          {searching ? (
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+          ) : (
+            <FiSearch />
+          )}
+          Search
+        </button>
+      </div>
+      
+      {/* Search Results Dropdown */}
+      {showResults && results.length > 0 && (
+        <div className="absolute z-[1000] w-full mt-2 bg-white rounded-xl shadow-2xl border border-slate-200 max-h-60 overflow-y-auto">
+          {results.map((result, index) => (
+            <button
+              key={index}
+              type="button"
+              onClick={() => handleSelect(result)}
+              className="w-full px-4 py-3 text-left hover:bg-emerald-50 transition-colors border-b border-slate-100 last:border-b-0"
+            >
+              <p className="font-semibold text-slate-900 text-sm truncate">{result.display_name.split(',')[0]}</p>
+              <p className="text-xs text-slate-500 truncate">{result.display_name}</p>
+            </button>
+          ))}
+        </div>
+      )}
+      
+      {showResults && results.length === 0 && !searching && (
+        <div className="absolute z-[1000] w-full mt-2 bg-white rounded-xl shadow-2xl border border-slate-200 p-4 text-center">
+          <p className="text-slate-500 text-sm">No locations found. Try a different search.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function AddProperty() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+  // ✅ EDIT MODE DETECTION
+  const editId = searchParams.get('edit');
+  const isEditMode = !!editId;
+
+  const [loading, setLoading] = useState(false);
+  const [fetchingProperty, setFetchingProperty] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+  const [gettingLocation, setGettingLocation] = useState(false);
+
+  // Map state
+  const [selectedPosition, setSelectedPosition] = useState<[number, number] | null>(null);
+  const [mapCenter, setMapCenter] = useState<[number, number]>([20.5937, 78.9629]); // India center
+
+  const [formData, setFormData] = useState({
+    name: '',
+    type: 'hostel',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    contactPhone: '',
+    description: '',
+    pricePerMonth: '',
+    totalRooms: '',
+    amenities: [] as string[]
+  });
+
+  const amenitiesList = [
+    'WiFi', 'AC', 'Parking', 'Laundry', 'Mess/Food', 
+    'Gym', 'Security', 'CCTV', 'Power Backup', 'Water Supply',
+    'Attached Bathroom', 'Study Room', 'Common Area'
+  ];
+
+  // ✅ FETCH EXISTING PROPERTY DATA FOR EDIT MODE
+  useEffect(() => {
+    if (isEditMode && editId) {
+      fetchPropertyData();
+    }
+  }, [editId, isEditMode]);
+
+  const fetchPropertyData = async () => {
+    setFetchingProperty(true);
+    setError('');
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API}/api/accommodations/${editId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        const property = data.data;
+        
+        // Pre-fill form with existing data
+        setFormData({
+          name: property.name || '',
+          type: property.type || 'hostel',
+          address: property.address || '',
+          city: property.city || '',
+          state: property.state || '',
+          pincode: property.pincode || '',
+          contactPhone: property.contactPhone || '',
+          description: property.description || '',
+          pricePerMonth: property.pricePerMonth?.toString() || '',
+          totalRooms: property.totalRooms?.toString() || '',
+          amenities: property.amenities || []
+        });
+        
+        // Set map position if coordinates exist
+        if (property.latitude && property.longitude) {
+          const pos: [number, number] = [property.latitude, property.longitude];
+          setSelectedPosition(pos);
+          setMapCenter(pos);
+        }
+      } else {
+        setError('Failed to load property data');
+      }
+    } catch (err) {
+      console.error('Fetch property error:', err);
+      setError('Error loading property data');
+    } finally {
+      setFetchingProperty(false);
+    }
+  };
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const toggleAmenity = (amenity: string) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(amenity)
+        ? prev.amenities.filter(a => a !== amenity)
+        : [...prev.amenities, amenity]
+    }));
+  };
+
+  // Handle location selection from search
+  const handleLocationSelect = (lat: number, lng: number, address: string) => {
+    setSelectedPosition([lat, lng]);
+    setMapCenter([lat, lng]);
+    
+    const parts = address.split(',').map(p => p.trim());
+    if (parts.length >= 2) {
+      const possibleCity = parts[0] || parts[1];
+      const possibleState = parts[parts.length - 2] || '';
+      
+      setFormData(prev => ({
+        ...prev,
+        address: parts.slice(0, -2).join(', ') || address,
+        city: prev.city || possibleCity,
+        state: prev.state || possibleState
+      }));
+    }
+  };
+
+  // Handle map position change
+  const handlePositionChange = async (pos: [number, number]) => {
+    setSelectedPosition(pos);
+    
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${pos[0]}&lon=${pos[1]}`
+      );
+      const data = await response.json();
+      
+      if (data.address) {
+        setFormData(prev => ({
+          ...prev,
+          address: data.display_name?.split(',').slice(0, 3).join(',') || prev.address,
+          city: data.address.city || data.address.town || data.address.village || prev.city,
+          state: data.address.state || prev.state,
+          pincode: data.address.postcode || prev.pincode
+        }));
+      }
+    } catch (error) {
+      console.error('Reverse geocoding error:', error);
+    }
+  };
+
+  // Get current location
+  const getCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser');
       return;
     }
 
-    setSubmitting(true);
+    setGettingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const pos: [number, number] = [position.coords.latitude, position.coords.longitude];
+        setSelectedPosition(pos);
+        setMapCenter(pos);
+        await handlePositionChange(pos);
+        setGettingLocation(false);
+      },
+      (error) => {
+        console.error('Geolocation error:', error);
+        alert('Unable to get your location. Please select manually on the map.');
+        setGettingLocation(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    // Validation for required fields
+    if (!selectedPosition) {
+      setError('Please select a location on the map');
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      setError('Property name is required');
+      return;
+    }
+
+    if (!formData.address.trim()) {
+      setError('Address is required');
+      return;
+    }
+
+    if (!formData.city.trim()) {
+      setError('City is required');
+      return;
+    }
+
+    if (!formData.description.trim()) {
+      setError('Description is required');
+      return;
+    }
+
+    if (!formData.totalRooms || parseInt(formData.totalRooms) <= 0) {
+      setError('Total rooms is required (must be greater than 0)');
+      return;
+    }
+
+    if (!formData.pricePerMonth || parseInt(formData.pricePerMonth) <= 0) {
+      setError('Price per month is required (must be greater than 0)');
+      return;
+    }
+
+    if (!formData.contactPhone.trim()) {
+      setError('Contact phone is required');
+      return;
+    }
+
+    setLoading(true);
+
+    // Prepare data matching schema exactly
+    const requestData = {
+      name: formData.name.trim(),
+      address: formData.address.trim(),
+      city: formData.city.trim(),
+      description: formData.description.trim(),
+      totalRooms: parseInt(formData.totalRooms),
+      pricePerMonth: parseInt(formData.pricePerMonth),
+      contactPhone: formData.contactPhone.trim(),
+      amenities: formData.amenities,
+      latitude: selectedPosition[0],
+      longitude: selectedPosition[1],
+      location: {
+        type: 'Point',
+        coordinates: [selectedPosition[1], selectedPosition[0]] // GeoJSON: [lng, lat]
+      }
+    };
+
+    console.log('Sending data:', requestData);
+
     try {
-      const payload = {
-        ...data,
-        monthlyRent: Number(data.monthlyRent),
-        location: {
-          type: 'Point',
-          coordinates: [markerPosition[1], markerPosition[0]], // GeoJSON: [lng, lat]
-        },
-      };
-
-      const url = isEditMode
-        ? `${API}/api/owner/properties/${editId}`
-        : `${API}/api/owner/properties`;
-
+      const token = localStorage.getItem('token');
+      
+      // ✅ USE PUT FOR EDIT, POST FOR ADD
+      const url = isEditMode 
+        ? `${API}/api/owner/accommodations/${editId}` 
+        : `${API}/api/owner/accommodations`;
+      
       const method = isEditMode ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method,
+      
+      const response = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(requestData)
       });
 
-      if (!res.ok) {
-        const errBody = await res.json().catch(() => ({}));
-        throw new Error(errBody.message || 'Failed to save property');
-      }
+      const data = await response.json();
+      console.log('Response:', data);
 
-      toast.success(isEditMode ? t('owner.addProperty.propertyUpdated') : t('owner.addProperty.propertyCreated'));
-      navigate('/owner/dashboard');
-    } catch (err: any) {
-      toast.error(err.message || 'Something went wrong'); // fallback not in i18n
+      if (response.ok && data.success) {
+        setSuccess(true);
+        setTimeout(() => {
+          navigate('/owner/dashboard');
+        }, 2000);
+      } else {
+        setError(data.message || `Failed to ${isEditMode ? 'update' : 'add'} property. Please check all fields.`);
+      }
+    } catch (err) {
+      console.error('Property error:', err);
+      setError('Connection error. Please try again.');
     } finally {
-      setSubmitting(false);
+      setLoading(false);
     }
   };
 
-  // --- Loading state ---
-  if (loadingProperty) {
+  // ✅ LOADING STATE FOR EDIT MODE
+  if (fetchingProperty) {
     return (
-      <div className="p-6 lg:p-8 max-w-3xl mx-auto">
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-          <span className="ml-3 text-slate-500">{t('owner.addProperty.loadingProperty')}</span>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading property data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (success) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="bg-white p-12 rounded-3xl shadow-xl text-center max-w-md">
+          <div className="w-20 h-20 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <FiCheck className="h-10 w-10 text-emerald-600" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 mb-2">
+            {isEditMode ? 'Property Updated!' : 'Property Added!'}
+          </h2>
+          <p className="text-slate-500 mb-6">
+            {isEditMode 
+              ? 'Your property has been updated successfully.' 
+              : 'Your property has been registered successfully.'
+            } Redirecting to dashboard...
+          </p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 lg:p-8 max-w-3xl mx-auto">
+    <div className="min-h-screen bg-slate-50 pb-20">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
-      >
-        <button
-          onClick={() => navigate('/owner/dashboard')}
-          className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 transition-colors mb-4"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t('owner.addProperty.backToDashboard')}
-        </button>
-        <h1 className="text-2xl font-bold text-slate-900">
-          {isEditMode ? t('owner.addProperty.editProperty') : t('owner.addProperty.addNewProperty')}
-        </h1>
-        <p className="text-slate-500 mt-1">
-          {isEditMode
-            ? t('owner.addProperty.editSubtitle')
-            : t('owner.addProperty.addSubtitle')}
-        </p>
-      </motion.div>
+      <div className="bg-slate-900 text-white pt-10 pb-20">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Link 
+            to="/owner/dashboard" 
+            className="inline-flex items-center gap-2 text-emerald-400 hover:text-emerald-300 font-bold mb-8 transition-colors"
+          >
+            <FiArrowLeft /> Back to Dashboard
+          </Link>
+          {/* ✅ DYNAMIC TITLE BASED ON MODE */}
+          <h1 className="text-3xl font-black tracking-tight mb-2 flex items-center gap-3">
+            {isEditMode ? (
+              <>
+                <FiEdit3 className="text-emerald-400" /> Edit Property
+              </>
+            ) : (
+              <>
+                <FiHome className="text-emerald-400" /> Add New Property
+              </>
+            )}
+          </h1>
+          <p className="text-slate-400 font-medium">
+            {isEditMode 
+              ? 'Update your property details below' 
+              : 'Register your accommodation to start building trust with students'
+            }
+          </p>
+        </div>
+      </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-        {/* ---- Basic Info Card ---- */}
-        <ScrollReveal>
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Building2 className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.basicInfo')}</h2>
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10">
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-xl p-8 lg:p-12">
+          
+          {/* Error Message */}
+          {error && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+              <FiAlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-bold text-red-700">{error}</p>
             </div>
-            <div className="space-y-5">
-              {/* Property Name */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {t('owner.addProperty.propertyName')}
-                </label>
-                <Input
-                  placeholder={t('owner.addProperty.propertyNamePlaceholder')}
-                  {...register('name')}
-                />
-                {errors.name && (
-                  <p className="mt-1 text-xs text-red-500">{errors.name.message}</p>
-                )}
-              </div>
+          )}
 
-              {/* Property Type */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {t('owner.addProperty.propertyType')}
-                </label>
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {PROPERTY_TYPES.map((pt) => (
-                    <button
-                      key={pt.value}
-                      type="button"
-                      onClick={() => setValue('type', pt.value as any, { shouldValidate: true })}
-                      className={cn(
-                        'rounded-lg border-2 px-3 py-2.5 text-sm font-medium transition-all',
-                        watch('type') === pt.value
-                          ? 'border-primary-600 bg-primary-50 text-primary-700'
-                          : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                      )}
-                    >
-                      {pt.label}
-                    </button>
-                  ))}
-                </div>
-                {errors.type && (
-                  <p className="mt-1 text-xs text-red-500">{errors.type.message}</p>
-                )}
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {t('owner.addProperty.description')}
-                </label>
-                <textarea
-                  {...register('description')}
-                  rows={4}
-                  placeholder={t('owner.addProperty.descriptionPlaceholder')}
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
-                />
-                {errors.description && (
-                  <p className="mt-1 text-xs text-red-500">{errors.description.message}</p>
-                )}
-              </div>
+          {/* Edit Mode Notice */}
+          {isEditMode && (
+            <div className="mb-8 p-4 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-3">
+              <FiEdit3 className="h-5 w-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+              <p className="text-sm font-bold text-emerald-700">
+                You are editing an existing property. Changes will be saved when you click "Update Property".
+              </p>
             </div>
-          </Card>
-        </ScrollReveal>
+          )}
 
-        {/* ---- Location Card ---- */}
-        <ScrollReveal delay={100}>
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <MapPin className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.location')}</h2>
-            </div>
-            <div className="space-y-5">
-              {/* Address */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {t('owner.addProperty.streetAddress')}
-                </label>
-                <Input
-                  placeholder={t('owner.addProperty.streetAddressPlaceholder')}
-                  {...register('address')}
-                />
-                {errors.address && (
-                  <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                {/* City */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    {t('owner.addProperty.city')}
-                  </label>
-                  <Input
-                    placeholder={t('owner.addProperty.cityPlaceholder')}
-                    {...register('city')}
-                  />
-                  {errors.city && (
-                    <p className="mt-1 text-xs text-red-500">{errors.city.message}</p>
-                  )}
-                </div>
-
-                {/* Area */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    {t('owner.addProperty.areaLocality')}
-                  </label>
-                  <Input
-                    placeholder={t('owner.addProperty.areaPlaceholder')}
-                    {...register('area')}
-                  />
-                  {errors.area && (
-                    <p className="mt-1 text-xs text-red-500">{errors.area.message}</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Map Picker */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {t('owner.addProperty.pinLocation')}
-                </label>
-                <p className="text-xs text-slate-400 mb-2">
-                  {t('owner.addProperty.pinLocationHint')}
-                </p>
-                <div className="rounded-xl overflow-hidden border border-slate-200" style={{ height: 320 }}>
-                  <MapContainer
-                    center={markerPosition || DEFAULT_MAP_CENTER}
-                    zoom={markerPosition ? 15 : 12}
-                    className="w-full h-full"
-                    style={{ height: '100%' }}
-                  >
-                    <TileLayer
-                      attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    />
-                    <MapClickHandler onLocationSelect={handleLocationSelect} />
-                    {markerPosition && (
-                      <Marker position={markerPosition} icon={defaultMarkerIcon} />
-                    )}
-                  </MapContainer>
-                </div>
-                {markerPosition && (
-                  <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
-                    <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
-                    <span>
-                      {t('owner.addProperty.locationSet', { lat: markerPosition[0].toFixed(5), lng: markerPosition[1].toFixed(5) })}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </Card>
-        </ScrollReveal>
-
-        {/* ---- Contact & Pricing Card ---- */}
-        <ScrollReveal delay={200}>
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <Phone className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.contactPricing')}</h2>
-            </div>
-            <div className="space-y-5">
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                {/* Contact Phone */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    {t('owner.addProperty.contactPhone')}
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      placeholder={t('owner.addProperty.phonePlaceholder')}
-                      className="pl-10"
-                      {...register('contactPhone')}
-                    />
-                  </div>
-                  {errors.contactPhone && (
-                    <p className="mt-1 text-xs text-red-500">{errors.contactPhone.message}</p>
-                  )}
-                </div>
-
-                {/* Monthly Rent */}
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    {t('owner.addProperty.monthlyRent')}
-                  </label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                    <Input
-                      placeholder={t('owner.addProperty.rentPlaceholder')}
-                      className="pl-10"
-                      type="number"
-                      min={0}
-                      {...register('monthlyRent')}
-                    />
-                  </div>
-                  {errors.monthlyRent && (
-                    <p className="mt-1 text-xs text-red-500">{errors.monthlyRent.message}</p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </Card>
-        </ScrollReveal>
-
-        {/* ---- Room Types Card ---- */}
-        <ScrollReveal delay={300}>
-          <Card className="p-6">
-            <div className="flex items-center gap-2 mb-5">
-              <FileText className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.roomTypes')}</h2>
-            </div>
-            <p className="text-xs text-slate-400 mb-3">
-              {t('owner.addProperty.roomTypesHint')}
+          {/* Required Fields Notice */}
+          <div className="mb-8 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <p className="text-sm text-blue-700">
+              <span className="font-bold">Note:</span> Fields marked with <span className="text-red-500">*</span> are required
             </p>
-            <div className="flex flex-wrap gap-2">
-              {ROOM_TYPE_OPTIONS.map((rt) => {
-                const active = selectedRoomTypes.includes(rt);
-                return (
-                  <button
-                    key={rt}
-                    type="button"
-                    onClick={() => toggleRoomType(rt)}
-                    className={cn(
-                      'inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-medium transition-all',
-                      active
-                        ? 'border-primary-600 bg-primary-50 text-primary-700'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300'
-                    )}
-                  >
-                    {active && <CheckCircle className="h-3.5 w-3.5" />}
-                    {!active && <Plus className="h-3.5 w-3.5" />}
-                    {rt}
-                  </button>
-                );
-              })}
+          </div>
+
+          {/* Basic Information */}
+          <div className="mb-10">
+            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+              <FiHome className="text-emerald-600" /> Basic Information
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                  Property Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="name"
+                  type="text"
+                  required
+                  value={formData.name}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                  placeholder="e.g., Sunshine Hostel"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                  Property Type <span className="text-red-500">*</span>
+                </label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold cursor-pointer"
+                >
+                  <option value="hostel">Hostel</option>
+                  <option value="pg">PG (Paying Guest)</option>
+                  <option value="apartment">Apartment</option>
+                  <option value="flat">Flat</option>
+                  <option value="room">Single Room</option>
+                </select>
+              </div>
             </div>
-            {selectedRoomTypes.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mt-3">
-                {selectedRoomTypes.map((rt) => (
-                  <span
-                    key={rt}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary-100 text-primary-700 px-2.5 py-0.5 text-xs font-semibold"
-                  >
-                    {rt}
-                    <button
-                      type="button"
-                      onClick={() => toggleRoomType(rt)}
-                      className="hover:text-primary-900"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </span>
-                ))}
+            <div className="mt-6">
+              <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows={3}
+                className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold resize-none"
+                placeholder="Describe your property, facilities, rules, nearby landmarks, etc."
+              />
+            </div>
+          </div>
+
+          {/* Location with Map */}
+          <div className="mb-10">
+            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+              <FiMapPin className="text-emerald-600" /> Select Location on Map <span className="text-red-500">*</span>
+            </h2>
+            
+            {/* Search and GPS buttons */}
+            <div className="mb-4 space-y-4">
+              <SearchControl onLocationSelect={handleLocationSelect} />
+              
+              <div className="flex items-center gap-4">
+                <button
+                  type="button"
+                  onClick={getCurrentLocation}
+                  disabled={gettingLocation}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all disabled:opacity-50"
+                >
+                  {gettingLocation ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <FiNavigation />
+                  )}
+                  Use My Location
+                </button>
+                
+                <span className="text-sm text-slate-500">
+                  Or click directly on the map to select location
+                </span>
+              </div>
+            </div>
+
+            {/* Map Container */}
+            <div className="rounded-2xl overflow-hidden border-2 border-slate-200 shadow-lg">
+              <MapContainer
+                center={mapCenter}
+                zoom={isEditMode && selectedPosition ? 16 : 5}
+                style={{ height: '400px', width: '100%' }}
+                className="z-0"
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <LocationMarker position={selectedPosition} setPosition={handlePositionChange} />
+                <FlyToLocation position={selectedPosition} />
+              </MapContainer>
+            </div>
+
+            {/* Selected Coordinates Display */}
+            {selectedPosition && (
+              <div className="mt-4 p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                <div className="flex items-center gap-2 text-emerald-700 font-bold mb-2">
+                  <FiCheck className="text-emerald-600" />
+                  Location Selected
+                </div>
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-500">Latitude:</span>
+                    <span className="ml-2 font-mono font-bold text-slate-900">{selectedPosition[0].toFixed(6)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500">Longitude:</span>
+                    <span className="ml-2 font-mono font-bold text-slate-900">{selectedPosition[1].toFixed(6)}</span>
+                  </div>
+                </div>
               </div>
             )}
-            {errors.roomTypes && (
-              <p className="mt-2 text-xs text-red-500">{errors.roomTypes.message}</p>
-            )}
-          </Card>
-        </ScrollReveal>
 
-        {/* ---- Actions ---- */}
-        <FadeIn delay={400}>
-          <div className="flex items-center justify-between pt-2 pb-6">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate('/owner/dashboard')}
-              disabled={submitting}
+            {!selectedPosition && (
+              <div className="mt-4 p-4 bg-yellow-50 rounded-xl border border-yellow-200">
+                <p className="text-yellow-700 text-sm font-semibold">
+                  ⚠️ Please select a location on the map by clicking or using search/GPS
+                </p>
+              </div>
+            )}
+
+            {/* Address Fields */}
+            <div className="mt-6 space-y-6">
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                  Full Address <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="address"
+                  type="text"
+                  required
+                  value={formData.address}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                  placeholder="Building name, street, area"
+                />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                    City <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    name="city"
+                    type="text"
+                    required
+                    value={formData.city}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                    placeholder="e.g., Hyderabad"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">State</label>
+                  <input
+                    name="state"
+                    type="text"
+                    value={formData.state}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                    placeholder="e.g., Telangana"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">Pincode</label>
+                  <input
+                    name="pincode"
+                    type="text"
+                    value={formData.pincode}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                    placeholder="e.g., 500001"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Contact */}
+          <div className="mb-10">
+            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+              <FiPhone className="text-emerald-600" /> Contact Information
+            </h2>
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                Contact Phone <span className="text-red-500">*</span>
+              </label>
+              <input
+                name="contactPhone"
+                type="tel"
+                required
+                value={formData.contactPhone}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                placeholder="e.g., +91 9876543210"
+              />
+            </div>
+          </div>
+
+          {/* Pricing & Capacity */}
+          <div className="mb-10">
+            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+              <FiDollarSign className="text-emerald-600" /> Pricing & Capacity
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                  Price Per Month (₹) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="pricePerMonth"
+                  type="number"
+                  required
+                  min="1"
+                  value={formData.pricePerMonth}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                  placeholder="e.g., 5000"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase tracking-widest text-slate-400 mb-2">
+                  Total Rooms <span className="text-red-500">*</span>
+                </label>
+                <input
+                  name="totalRooms"
+                  type="number"
+                  required
+                  min="1"
+                  value={formData.totalRooms}
+                  onChange={handleChange}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-transparent rounded-xl focus:bg-white focus:border-emerald-500 outline-none transition-all font-semibold"
+                  placeholder="e.g., 20"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Amenities */}
+          <div className="mb-10">
+            <h2 className="text-xl font-black text-slate-900 mb-6 flex items-center gap-2">
+              <FiUsers className="text-emerald-600" /> Amenities (Optional)
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {amenitiesList.map((amenity) => (
+                <button
+                  key={amenity}
+                  type="button"
+                  onClick={() => toggleAmenity(amenity)}
+                  className={`px-4 py-2 rounded-xl font-semibold text-sm transition-all ${
+                    formData.amenities.includes(amenity)
+                      ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-200'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {formData.amenities.includes(amenity) && <FiCheck className="inline mr-1" />}
+                  {amenity}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Submit - ✅ DYNAMIC BUTTON TEXT */}
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              type="submit"
+              disabled={loading || !selectedPosition}
+              className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-lg shadow-xl shadow-emerald-200 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              {t('common.cancel', 'Cancel')}
-            </Button>
-            <Button type="submit" disabled={submitting} className="min-w-[160px]">
-              {submitting ? (
+              {loading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditMode ? t('owner.addProperty.submitting') : t('owner.addProperty.submitting')}
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  {isEditMode ? 'Updating Property...' : 'Adding Property...'}
                 </>
               ) : (
                 <>
-                  <Save className="mr-2 h-4 w-4" />
-                  {isEditMode ? t('owner.addProperty.update') : t('owner.addProperty.save')}
+                  {isEditMode ? <FiEdit3 /> : <FiSave />}
+                  {isEditMode ? 'Update Property' : 'Add Property'}
                 </>
               )}
-            </Button>
+            </button>
+            <Link
+              to="/owner/dashboard"
+              className="py-4 px-8 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-lg transition-all text-center"
+            >
+              Cancel
+            </Link>
           </div>
-        </FadeIn>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

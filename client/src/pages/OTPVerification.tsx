@@ -12,12 +12,16 @@ export function OTPVerificationPage() {
   const navigate = useNavigate();
   const { user, loading } = useAuthStore();
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+    <div className="min-h-screen bg-canvas-soft dark:bg-[#0a0a0a] flex items-center justify-center p-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }} className="w-full max-w-md">
+        <div className="bg-canvas dark:bg-[#111111] rounded-lg card-shadow-4 p-8 border border-hairline dark:border-[#333333]">
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-3"><Shield className="h-10 w-10 text-primary-600" /></div>
-            <h1 className="text-2xl font-bold text-slate-900">{t('auth.verifyYourEmail')}</h1>
+            <div className="flex justify-center mb-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-canvas-soft dark:bg-[#1a1a1a] border border-hairline dark:border-[#333333]">
+                <Shield className="h-6 w-6 text-ink dark:text-white" strokeWidth={2} />
+              </div>
+            </div>
+            <h1 className="text-2xl font-semibold tracking-tight text-ink dark:text-white">{t('auth.verifyYourEmail')}</h1>
           </div>
           <OTPForm
             onSubmit={async (otp: string) => {

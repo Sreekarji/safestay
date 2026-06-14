@@ -5,7 +5,7 @@ import { VerificationResult } from '../models/VerificationResult.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { reportLimiter } from '../middleware/rateLimiter.js';
 import { verifyReport } from '../utils/aiVerification.js';
-import { calculateSSI } from '../utils/trustScore.js';
+import { calculateSSI, getTrustScoreLabel, getTrustScoreColor } from '../utils/trustScore.js';
 
 const router = Router();
 
@@ -26,11 +26,27 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
       return;
     }
 
-    if (!user.isVerified) {
+    // Check if user is banned
+    if (user.isBanned) {
       res.status(403).json({
         success: false,
-        error: 'Please verify your email before submitting reports',
+        error: 'Your account has been suspended. Please contact support.',
         code: 'FORBIDDEN',
+      });
+      return;
+    }
+
+    // Check college verification
+    const isCollegeVerified = user.isCollegeVerified === true;
+
+    if (!isCollegeVerified) {
+      res.status(403).json({
+        success: false,
+        error: 'Please verify your college email before submitting reports. Only verified college students can report safety issues.',
+        code: 'FORBIDDEN',
+        requiresVerification: true,
+        requiresCollegeVerification: true,
+        userEmail: user.email,
       });
       return;
     }
@@ -132,9 +148,14 @@ router.post('/', authMiddleware, reportLimiter, async (req: AuthRequest, res: Re
       accommodation.ssi = ssi;
       accommodation.categoryScores = categoryScores as any;
       accommodation.reportCount = reports.length;
+      accommodation.totalReports = reports.length;
       accommodation.verifiedReportCount = reports.filter((r: any) =>
         ['ai_verified', 'approved', 'resolved', 'verified'].includes(r.status)
       ).length;
+      accommodation.trustScore = ssi;
+      accommodation.trustScoreLabel = getTrustScoreLabel(ssi);
+      accommodation.trustScoreColor = getTrustScoreColor(ssi);
+      accommodation.riskScore = 100 - ssi;
       await accommodation.save();
 
       console.log(`✅ Report ${report._id} AI verification complete: ${aiResult.consensus}`);
@@ -408,6 +429,11 @@ router.delete('/:id', authMiddleware, async (req: AuthRequest, res: Response) =>
       accommodation.ssi = ssi;
       accommodation.categoryScores = categoryScores as any;
       accommodation.reportCount = reports.length;
+      accommodation.totalReports = reports.length;
+      accommodation.trustScore = ssi;
+      accommodation.trustScoreLabel = getTrustScoreLabel(ssi);
+      accommodation.trustScoreColor = getTrustScoreColor(ssi);
+      accommodation.riskScore = 100 - ssi;
       await accommodation.save();
     }
 
@@ -451,9 +477,9 @@ router.post('/:id/upvote', authMiddleware, async (req: AuthRequest, res: Respons
       return;
     }
 
-    // Toggle upvote
+    // Toggle upvote — use findIndex with .equals() for reliable ObjectId comparison
     const userId = req.user?._id;
-    const upvoteIndex = report.upvotedBy.indexOf(userId);
+    const upvoteIndex = report.upvotedBy.findIndex((id: any) => id.equals(userId));
 
     if (upvoteIndex > -1) {
       // Remove upvote
@@ -467,13 +493,22 @@ router.post('/:id/upvote', authMiddleware, async (req: AuthRequest, res: Respons
 
     await report.save();
 
-    // Recalculate SSI (upvotes affect penalty)
-    const accommodation = await Accommodation.findById(report.accommodationId);
-    if (accommodation) {
-      const reports = await Report.find({ accommodationId: accommodation._id });
-      const { ssi } = calculateSSI(reports, accommodation.ssi);
-      accommodation.ssi = ssi;
-      await accommodation.save();
+    // Recalculate SSI (upvotes affect penalty) — isolated so save failure doesn't break upvote
+    try {
+      const accommodation = await Accommodation.findById(report.accommodationId);
+      if (accommodation) {
+        const reports = await Report.find({ accommodationId: accommodation._id });
+        const { ssi } = calculateSSI(reports, accommodation.ssi);
+        accommodation.ssi = ssi;
+        accommodation.trustScore = ssi;
+        accommodation.trustScoreLabel = getTrustScoreLabel(ssi);
+        accommodation.trustScoreColor = getTrustScoreColor(ssi);
+        accommodation.riskScore = 100 - ssi;
+        await accommodation.save();
+      }
+    } catch (ssiError) {
+      console.error('SSI recalculation failed after upvote:', ssiError);
+      // Don't fail the upvote request — the upvote itself was saved
     }
 
     res.json({
@@ -547,6 +582,10 @@ router.put('/:id/verify', authMiddleware, async (req: AuthRequest, res: Response
       const reports = await Report.find({ accommodationId: accommodation._id });
       const { ssi } = calculateSSI(reports, accommodation.ssi);
       accommodation.ssi = ssi;
+      accommodation.trustScore = ssi;
+      accommodation.trustScoreLabel = getTrustScoreLabel(ssi);
+      accommodation.trustScoreColor = getTrustScoreColor(ssi);
+      accommodation.riskScore = 100 - ssi;
       await accommodation.save();
     }
 

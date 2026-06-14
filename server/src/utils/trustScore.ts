@@ -45,6 +45,24 @@ const getStatusMultiplier = (status: IReport['status']): number => {
   }
 };
 
+// Get trust score label from SSI
+export const getTrustScoreLabel = (ssi: number): string => {
+  if (ssi >= 80) return 'Excellent';
+  if (ssi >= 60) return 'Good';
+  if (ssi >= 40) return 'Moderate';
+  if (ssi >= 20) return 'Poor';
+  return 'Critical';
+};
+
+// Get trust score color from SSI
+export const getTrustScoreColor = (ssi: number): string => {
+  if (ssi >= 80) return '#0070f3'; // Link blue (safe)
+  if (ssi >= 60) return '#0070f3'; // Link blue
+  if (ssi >= 40) return '#f5a623'; // Warning (moderate)
+  if (ssi >= 20) return '#ee0000'; // Error (risky)
+  return '#ee0000'; // Error (critical)
+};
+
 export interface SSICalculationResult {
   ssi: number;
   penalties: Array<{

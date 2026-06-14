@@ -4,22 +4,22 @@ import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap rounded-lg text-sm font-medium ring-offset-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center whitespace-nowrap rounded-pill text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/20 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800",
-        destructive: "bg-red-500 text-white hover:bg-red-600 active:bg-red-700",
-        outline: "border border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900",
-        secondary: "bg-slate-100 text-slate-900 hover:bg-slate-200",
-        ghost: "hover:bg-slate-100 hover:text-slate-900",
-        link: "text-primary-600 underline-offset-4 hover:underline",
+        default: "bg-ink text-white hover:bg-black",
+        destructive: "bg-error text-white hover:bg-error-deep",
+        outline: "border border-hairline bg-canvas text-ink hover:bg-canvas-soft hover:border-hairline-strong",
+        secondary: "bg-canvas-soft text-ink hover:bg-canvas-soft-2",
+        ghost: "text-body hover:bg-canvas-soft hover:text-ink",
+        link: "text-link underline-offset-4 hover:underline",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-lg px-8",
-        icon: "h-10 w-10",
+        default: "h-10 px-5 py-2",
+        sm: "h-8 rounded-pill-sm px-3 text-xs",
+        lg: "h-12 rounded-pill px-8 text-base",
+        icon: "h-10 w-10 rounded-full",
       },
     },
     defaultVariants: {

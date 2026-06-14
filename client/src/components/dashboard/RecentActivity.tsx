@@ -7,10 +7,11 @@ import { Badge } from '@/components/ui/badge';
 import { cn, formatDate, getSeverityColor, getStatusColor } from '@/lib/utils';
 
 interface ReportItem {
-  id: string;
+  _id?: string;
+  id?: string;
   title: string;
   category: string;
-  severity: string;
+  severity: string | number;
   status: string;
   createdAt: string;
 }
@@ -45,8 +46,8 @@ export function RecentActivity({ reports }: RecentActivityProps) {
                 <th className="pb-3 text-left text-xs font-medium text-slate-500 uppercase">Date</th>
               </tr></thead>
               <tbody>{reports.map((r, i) => (
-                <motion.tr key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
-                  className="border-b border-slate-50 cursor-pointer hover:bg-slate-50" onClick={() => navigate(`/report/${r.id}`)}>
+                <motion.tr key={r._id || r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.05 }}
+                  className="border-b border-slate-50 cursor-pointer hover:bg-slate-50" onClick={() => navigate(`/report/${r._id || r.id}`)}>
                   <td className="py-3 text-sm font-medium text-slate-900">{r.title}</td>
                   <td className="py-3"><Badge variant="secondary" className="text-xs">{r.category}</Badge></td>
                   <td className="py-3"><Badge className={cn("text-xs", getSeverityColor(r.severity))}>{r.severity}</Badge></td>

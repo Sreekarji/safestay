@@ -3,7 +3,7 @@ import { Accommodation } from '../models/Accommodation.js';
 import { Report } from '../models/Report.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { ownerMiddleware } from '../middleware/ownerMiddleware.js';
-import { calculateSSI } from '../utils/trustScore.js';
+import { calculateSSI, getTrustScoreLabel, getTrustScoreColor } from '../utils/trustScore.js';
 
 const router = Router();
 
@@ -35,8 +35,8 @@ router.get('/', async (req, res: Response) => {
 
     const [accommodations, total] = await Promise.all([
       Accommodation.find(query)
-        .select('-__v')
-        .sort({ ssi: -1 })
+        .select('_id name address city description amenities totalRooms occupiedRooms pricePerMonth contactPhone type latitude longitude trustScore trustScoreLabel trustScoreColor totalReports isVerified riskScore createdAt ssi')
+        .sort({ trustScore: 1, createdAt: -1 })
         .skip(skip)
         .limit(Number(limit)),
       Accommodation.countDocuments(query),
@@ -96,7 +96,7 @@ router.get('/with-location', async (req, res: Response) => {
       isActive: true,
       'location.coordinates': { $exists: true },
     })
-      .select('name area type ssi location reportCount categoryScores')
+      .select('name area type ssi location reportCount categoryScores trustScore trustScoreLabel totalReports latitude longitude')
       .lean();
 
     // Add risk level to each
@@ -126,6 +126,7 @@ router.get('/:id', async (req, res: Response) => {
   try {
     const accommodation = await Accommodation.findById(req.params.id)
       .populate('ownerId', 'name phone')
+      .populate('owner', 'name phone')
       .select('-__v');
 
     if (!accommodation) {
@@ -142,7 +143,7 @@ router.get('/:id', async (req, res: Response) => {
       accommodationId: accommodation._id,
       status: { $in: ['ai_verified', 'approved', 'resolved', 'verified'] },
     })
-      .populate('userId', 'name college isVerified')
+      .populate('userId', 'name college isVerified collegeName')
       .sort({ createdAt: -1 })
       .limit(20);
 
@@ -195,10 +196,15 @@ router.post('/', authMiddleware, ownerMiddleware, async (req: AuthRequest, res: 
         type: 'Point',
         coordinates: location.coordinates || [78.4867, 17.3850], // Default Hyderabad
       },
+      latitude: location.coordinates?.[1] || 17.3850,
+      longitude: location.coordinates?.[0] || 78.4867,
       ownerId: req.user?._id,
+      owner: req.user?._id,
       amenities: amenities || [],
       capacity,
+      totalRooms: capacity,
       monthlyRent,
+      pricePerMonth: monthlyRent,
       contactPhone,
       contactEmail,
       images: images || [],
@@ -338,9 +344,14 @@ router.post('/:id/recalculate-score', authMiddleware, async (req: AuthRequest, r
     accommodation.ssi = ssi;
     accommodation.categoryScores = categoryScores as any;
     accommodation.reportCount = reports.length;
+    accommodation.totalReports = reports.length;
     accommodation.verifiedReportCount = reports.filter((r: any) =>
       ['ai_verified', 'approved', 'resolved', 'verified'].includes(r.status)
     ).length;
+    accommodation.trustScore = ssi;
+    accommodation.trustScoreLabel = getTrustScoreLabel(ssi);
+    accommodation.trustScoreColor = getTrustScoreColor(ssi);
+    accommodation.riskScore = 100 - ssi;
 
     // Add to SSI history
     accommodation.ssiHistory.push({

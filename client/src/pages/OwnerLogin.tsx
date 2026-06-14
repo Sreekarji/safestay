@@ -1,192 +1,243 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Loader2, Building2, Shield, ArrowRight } from 'lucide-react';
-import { loginSchema, type LoginFormData } from '@/lib/validations';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { useAuthStore } from '@/stores/authStore';
-import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { 
+  FiMail, FiLock, FiArrowRight, FiShield, FiHome, 
+  FiAlertCircle, FiEye, FiEyeOff, FiCheckCircle
+} from 'react-icons/fi';
 
-export function OwnerLogin() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { login, clearError, loading } = useAuthStore();
-  const [localError, setLocalError] = useState<string | null>(null);
+export default function OwnerLogin() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
-  });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    
+    if (!email.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+    if (!password) {
+      setError('Please enter your password');
+      return;
+    }
+    
+    setLoading(true);
 
-  const onSubmit = async (data: LoginFormData) => {
     try {
-      setLocalError(null);
-      clearError();
-      await login(data as { email: string; password: string });
-      navigate('/owner/dashboard');
+      const user = await login(email.trim().toLowerCase(), password);
+      
+      console.log('Login successful:', user);
+
+      if (user.role !== 'owner') {
+        setError('This account is not registered as a property owner. Please use student login or register as an owner.');
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setLoading(false);
+        return;
+      }
+
+      // Use full page redirect for reliable state sync
+      window.location.href = '/owner/dashboard';
+      
     } catch (err: any) {
-      setLocalError(err.message || 'Login failed');
+      console.error('Login error:', err);
+      setError(err.message || 'Invalid email or password');
+      setLoading(false);
     }
   };
 
-  const benefits = [
-    { icon: Building2, text: t('owner.login.manageProperties'), desc: t('owner.login.managePropertiesDesc') },
-    { icon: Shield, text: t('owner.login.buildTrust'), desc: t('owner.login.buildTrustDesc') },
-    { icon: ArrowRight, text: t('owner.login.attractTenants'), desc: t('owner.login.attractTenantsDesc') },
-    { icon: Mail, text: t('owner.login.directComm'), desc: t('owner.login.directCommDesc') },
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex">
-      {/* Left Panel - Owner Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-800 to-slate-900 text-white p-12 flex-col justify-center">
-        <div className="max-w-md">
-          <div className="flex items-center gap-2 mb-8">
-            <Shield className="h-8 w-8 text-green-400" />
-            <span className="text-2xl font-bold">SafeStay</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-emerald-900 to-teal-900 flex">
+      
+      {/* Left Side - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-emerald-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-teal-500 rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="relative z-10">
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-2xl shadow-lg shadow-emerald-900/30 group-hover:scale-105 transition-transform">
+              <FiHome className="h-8 w-8 text-white" />
+            </div>
+            <span className="text-2xl font-black tracking-tighter text-white uppercase">
+              Safe<span className="text-emerald-400">Stay</span>
+            </span>
+          </Link>
+        </div>
+
+        <div className="relative z-10 space-y-8">
+          <div>
+            <h1 className="text-5xl font-black text-white leading-tight">
+              Property Owner<br />
+              <span className="text-emerald-400">Portal</span>
+            </h1>
+            <p className="mt-6 text-xl text-emerald-100/80 max-w-md leading-relaxed">
+              Manage your properties, respond to student feedback, and build trust through transparency.
+            </p>
           </div>
-          <h2 className="text-3xl font-extrabold leading-tight mb-4">
-            {t('owner.login.welcomeBack', { role: t('owner.login.owner') })}
-          </h2>
-          <p className="text-slate-400 mb-8">
-            {t('owner.login.subtitle')}
-          </p>
-          <div className="space-y-6">
-            {benefits.map((b, i) => (
-              <div key={i} className="flex gap-4">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-500/20">
-                  <b.icon className="h-5 w-5 text-green-400" />
+
+          <div className="space-y-4">
+            {[
+              'Respond to safety reports with proof',
+              'Track your property trust scores',
+              'Attract safety-conscious tenants',
+              'Stand out from competitors'
+            ].map((feature, i) => (
+              <div key={i} className="flex items-center gap-3 text-emerald-100/70">
+                <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <FiCheckCircle className="h-4 w-4 text-emerald-400" />
                 </div>
-                <div>
-                  <h3 className="font-semibold text-white">{b.text}</h3>
-                  <p className="text-sm text-slate-400 mt-0.5">{b.desc}</p>
-                </div>
+                <span className="font-medium">{feature}</span>
               </div>
             ))}
           </div>
         </div>
+
+        <div className="relative z-10">
+          <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 px-4 py-2 rounded-full">
+            <FiShield className="text-emerald-400" />
+            <span className="text-sm font-semibold text-white">Trusted by 500+ Property Owners</span>
+          </div>
+        </div>
       </div>
 
-      {/* Right Panel - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-md"
-        >
-          {/* Mobile-only logo */}
-          <div className="flex items-center gap-2 mb-6 lg:hidden">
-            <Shield className="h-7 w-7 text-green-600" />
-            <span className="text-xl font-bold text-slate-900">SafeStay</span>
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-8">
+        <div className="w-full max-w-md">
+          <div className="lg:hidden text-center mb-8">
+            <Link to="/" className="inline-flex items-center gap-3">
+              <div className="bg-gradient-to-br from-emerald-500 to-teal-600 p-3 rounded-2xl shadow-lg">
+                <FiHome className="h-8 w-8 text-white" />
+              </div>
+              <span className="text-2xl font-black tracking-tighter text-white uppercase">
+                Safe<span className="text-emerald-400">Stay</span>
+              </span>
+            </Link>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h1 className="text-2xl font-bold text-slate-900 text-center mb-1">
-              {t('owner.login.title')}
-            </h1>
-            <p className="text-sm text-slate-500 text-center mb-6">
-              {t('owner.login.subtitleForm')}
-            </p>
+          <div className="bg-white rounded-3xl shadow-2xl p-8 lg:p-10">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-100 rounded-2xl mb-4">
+                <FiHome className="h-8 w-8 text-emerald-600" />
+              </div>
+              <h2 className="text-2xl font-black text-gray-900">Welcome Back, Owner</h2>
+              <p className="text-gray-500 mt-2">Manage your properties and build trust</p>
+            </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {localError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-                  <p className="text-sm text-red-700">{localError}</p>
-                </div>
-              )}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl flex items-start gap-3">
+                <FiAlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-red-600 font-medium">{error}</p>
+              </div>
+            )}
 
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {t('auth.email')}
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">
+                  Email Address
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
+                  <FiMail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
                     type="email"
-                    placeholder="you@example.com"
-                    className="pl-10"
-                    {...register('email')}
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                    placeholder="owner@example.com"
                   />
                 </div>
-                {errors.email && (
-                  <p className="mt-1 text-xs text-red-500">{errors.email.message}</p>
-                )}
               </div>
 
-              {/* Password */}
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  {t('auth.password')}
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-widest text-gray-400 ml-1">
+                  Password
                 </label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
+                  <FiLock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
                     type={showPassword ? 'text' : 'password'}
-                    placeholder="Enter your password"
-                    className="pl-10 pr-10"
-                    {...register('password')}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-12 pr-12 py-4 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition-all font-medium text-gray-700"
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
+                    {showPassword ? <FiEyeOff /> : <FiEye />}
                   </button>
                 </div>
-                {errors.password && (
-                  <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>
-                )}
               </div>
 
-              {/* Submit */}
-              <Button
+              <div className="flex justify-end">
+                <Link 
+                  to="/forgot-password" 
+                  className="text-sm font-semibold text-emerald-600 hover:text-emerald-700 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              <button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700"
                 disabled={loading}
+                className="w-full py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/25 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {t('owner.login.signingIn')}
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Signing in...
                   </>
                 ) : (
-                  <>{t('owner.login.signIn')}</>
+                  <>
+                    Access Dashboard <FiArrowRight />
+                  </>
                 )}
-              </Button>
+              </button>
             </form>
 
-            <p className="mt-6 text-center text-sm text-slate-500">
-              {t('owner.login.noAccount')}{' '}
-              <Link
-                to="/owner/register"
-                className="text-green-600 hover:text-green-700 font-medium"
-              >
-                {t('owner.login.registerAsOwner')}
-              </Link>
-            </p>
-            <p className="mt-2 text-center text-sm text-slate-500">
-              <Link
-                to="/login"
-                className="text-primary-600 hover:text-primary-700 font-medium"
-              >
-                {t('owner.login.signInAsStudent')}
+            <div className="my-8 flex items-center gap-4">
+              <div className="flex-1 h-px bg-gray-200"></div>
+              <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">New here?</span>
+              <div className="flex-1 h-px bg-gray-200"></div>
+            </div>
+
+            <Link
+              to="/owner/register"
+              className="w-full py-4 bg-gray-50 hover:bg-gray-100 text-gray-700 font-bold rounded-xl transition-all flex items-center justify-center gap-2 border border-gray-200"
+            >
+              Register Your Property <FiArrowRight />
+            </Link>
+
+            <p className="text-center text-sm text-gray-500 mt-6">
+              Are you a student?{' '}
+              <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+                Login here
               </Link>
             </p>
           </div>
-        </motion.div>
+
+          <div className="mt-6 text-center">
+            <div className="inline-flex items-center gap-2 text-emerald-200/60 text-sm">
+              <FiLock className="h-4 w-4" />
+              <span>Your data is encrypted and secure</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

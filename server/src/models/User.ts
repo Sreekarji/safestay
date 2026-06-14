@@ -8,10 +8,13 @@ export interface IUser extends Document {
   phone: string;
   role: 'student' | 'owner' | 'admin';
   college?: string;
+  collegeName?: string;
   studentId?: string;
   isVerified: boolean;
+  isCollegeVerified: boolean;
   isBanned: boolean;
   profilePhoto?: string;
+  notificationPrefs?: Record<string, boolean>;
 
   // Owner verification fields
   ownerVerification: {
@@ -72,11 +75,19 @@ const userSchema = new Schema<IUser>({
     type: String,
     trim: true,
   },
+  collegeName: {
+    type: String,
+    trim: true,
+  },
   studentId: {
     type: String,
     trim: true,
   },
   isVerified: {
+    type: Boolean,
+    default: false,
+  },
+  isCollegeVerified: {
     type: Boolean,
     default: false,
   },
@@ -86,6 +97,10 @@ const userSchema = new Schema<IUser>({
   },
   profilePhoto: {
     type: String, // Cloudinary URL
+  },
+  notificationPrefs: {
+    type: Schema.Types.Mixed,
+    default: {},
   },
 
   // Owner verification
@@ -134,7 +149,9 @@ userSchema.methods.comparePassword = async function(candidatePassword: string): 
 // Indexes
 userSchema.index({ role: 1 });
 userSchema.index({ college: 1 });
+userSchema.index({ collegeName: 1 });
 userSchema.index({ isBanned: 1 });
+userSchema.index({ isCollegeVerified: 1 });
 userSchema.index({ 'ownerVerification.status': 1 });
 
 export const User = mongoose.model<IUser>('User', userSchema);

@@ -6,10 +6,13 @@ export interface User {
   phone?: string;
   role: 'student' | 'owner' | 'admin';
   college?: string;
+  collegeName?: string;
   studentId?: string;
   isVerified?: boolean;
+  isCollegeVerified?: boolean;
   isBanned?: boolean;
   profilePhoto?: string;
+  notificationPrefs?: Record<string, boolean>;
   ownerVerification?: {
     status: 'none' | 'pending' | 'under_review' | 'verified' | 'rejected';
     rejectionReason?: string;
@@ -95,21 +98,30 @@ export interface Accommodation {
   latitude: number;
   longitude: number;
   ssi: number;
+  trustScore?: number;
+  trustScoreLabel?: string;
+  trustScoreColor?: string;
+  riskScore?: number;
   totalReports: number;
   verifiedReports: number;
   ownerName?: string;
   ownerContact?: string;
   ownerId?: string | User;
+  owner?: string | User;
   contactPhone?: string;
   contactEmail?: string;
   images: string[];
   description?: string;
   monthlyRent?: number;
+  pricePerMonth?: number;
   amenities?: string[];
   capacity?: number;
+  totalRooms?: number;
   currentOccupancy?: number;
+  occupiedRooms?: number;
   reportCount?: number;
   categoryScores?: Record<string, number>;
+  isVerified?: boolean;
   location?: {
     latitude: number;
     longitude: number;

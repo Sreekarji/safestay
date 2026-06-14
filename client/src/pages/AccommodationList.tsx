@@ -1,485 +1,300 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import {
-  Search,
-  MapPin,
-  Shield,
-  AlertTriangle,
-  TrendingUp,
-  Map,
-  List,
-  Grid,
-  ArrowRight,
-  CheckCircle,
-  AlertCircle,
-  XCircle,
-  Home,
-  Wrench,
-  Loader2,
-} from 'lucide-react';
-import { ScrollReveal, StaggerReveal, FadeIn } from '@/components/ParallaxEffect';
-import { getSSITailwind } from '@/lib/utils';
-import SafetyMap from '@/components/map/SafetyMap';
-import type { Accommodation } from '@/types';
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { 
+  FiSearch, FiMapPin, FiShield, FiAlertTriangle, FiTrendingUp, 
+  FiMap, FiList, FiGrid, FiArrowRight, FiCheckCircle, FiAlertCircle, FiXCircle, FiHome, FiTool
+} from 'react-icons/fi';
+import AccommodationMap from '../components/AccommodationMap';
+import { 
+  ScrollReveal, 
+  StaggerReveal, 
+  FadeIn,
+  ScaleIn 
+} from '../components/ParallaxEffect';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
-type SafetyFilter = 'all' | 'safe' | 'caution' | 'avoid';
-type ViewMode = 'grid' | 'list';
-
-const safetyFilters: { value: SafetyFilter; label: string; icon: React.ReactNode }[] = [
-  { value: 'all', label: 'All', icon: <Shield className="h-3.5 w-3.5" /> },
-  { value: 'safe', label: 'Safe (70+)', icon: <CheckCircle className="h-3.5 w-3.5" /> },
-  { value: 'caution', label: 'Moderate (40-69)', icon: <AlertCircle className="h-3.5 w-3.5" /> },
-  { value: 'avoid', label: 'Risky (<40)', icon: <XCircle className="h-3.5 w-3.5" /> },
-];
-
-function matchesSafetyFilter(ssi: number, filter: SafetyFilter): boolean {
-  switch (filter) {
-    case 'safe': return ssi >= 70;
-    case 'caution': return ssi >= 40 && ssi < 70;
-    case 'avoid': return ssi < 40;
-    default: return true;
-  }
-}
-
-function getScoreBadge(ssi: number) {
-  if (ssi >= 70) return { bg: 'bg-emerald-100 text-emerald-700', label: 'Safe' };
-  if (ssi >= 40) return { bg: 'bg-amber-100 text-amber-700', label: 'Moderate' };
-  return { bg: 'bg-red-100 text-red-700', label: 'Risky' };
-}
-
-function getScoreBorderColor(ssi: number) {
-  if (ssi >= 70) return 'border-emerald-200';
-  if (ssi >= 40) return 'border-amber-200';
-  return 'border-red-200';
-}
-
-function getScoreBarColor(ssi: number) {
-  if (ssi >= 70) return 'bg-emerald-500';
-  if (ssi >= 40) return 'bg-amber-500';
-  return 'bg-red-500';
-}
-
-function LoadingSkeleton() {
-  return (
-    <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-      <div className="animate-pulse">
-        <div className="h-40 rounded-2xl bg-gradient-to-r from-primary-700 to-indigo-800 mb-8" />
-        <div className="flex gap-3 mb-6">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="h-9 w-28 rounded-full bg-slate-200" />
-          ))}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-56 rounded-xl bg-slate-100" />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export function AccommodationList() {
-  const navigate = useNavigate();
-  const [accommodations, setAccommodations] = useState<Accommodation[]>([]);
+export const AccommodationList: React.FC = () => {
+  const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const [accommodations, setAccommodations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState('');
-  const [safetyFilter, setSafetyFilter] = useState<SafetyFilter>('all');
-  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [showMap, setShowMap] = useState(false);
-
-  const fetchAccommodations = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API}/api/accommodations`);
-      if (!res.ok) throw new Error(`Failed to fetch accommodations (${res.status})`);
-      const json = await res.json();
-      const data = json?.data ?? json;
-      setAccommodations(Array.isArray(data) ? data : []);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to load accommodations. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     fetchAccommodations();
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
-    return accommodations.filter((acc) => {
-      const matchesSearch =
-        !q ||
-        acc.name?.toLowerCase().includes(q) ||
-        acc.address?.toLowerCase().includes(q) ||
-        acc.area?.toLowerCase().includes(q) ||
-        acc.city?.toLowerCase().includes(q);
-      const matchesSafety = matchesSafetyFilter(acc.ssi, safetyFilter);
-      return matchesSearch && matchesSafety;
-    });
-  }, [accommodations, search, safetyFilter]);
+  const fetchAccommodations = async () => {
+    try {
+      const response = await fetch(`${API}/api/accommodations`);
+      const data = await response.json();
+      if (data.success) {
+        setAccommodations(data.data);
+      } else {
+        setError('Failed to load accommodations');
+      }
+    } catch {
+      setError('Error connecting to server');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const stats = useMemo(() => {
-    const total = filtered.length;
-    const safe = filtered.filter((a) => a.ssi >= 70).length;
-    const caution = filtered.filter((a) => a.ssi >= 40 && a.ssi < 70).length;
-    const avoid = filtered.filter((a) => a.ssi < 40).length;
-    return { total, safe, caution, avoid };
-  }, [filtered]);
+  const filteredAccommodations = (accommodations || []).filter(acc => {
+    const matchesSearch = !searchTerm || 
+      acc.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      acc.address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      acc.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesFilter = true;
+    if (selectedFilter === 'safe') matchesFilter = (acc.trustScore >= 80);
+    else if (selectedFilter === 'caution') matchesFilter = (acc.trustScore >= 50 && acc.trustScore < 80);
+    else if (selectedFilter === 'avoid') matchesFilter = (acc.trustScore < 50);
 
-  if (loading) return <LoadingSkeleton />;
+    return matchesSearch && matchesFilter;
+  });
 
-  if (error) {
-    return (
-      <div className="p-6 lg:p-8 max-w-7xl mx-auto">
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <div className="rounded-full bg-red-100 p-4 mb-4">
-            <AlertTriangle className="h-8 w-8 text-red-500" />
-          </div>
-          <h2 className="text-xl font-semibold text-slate-900 mb-2">Something went wrong</h2>
-          <p className="text-slate-500 mb-6 max-w-md">{error}</p>
-          <button
-            onClick={fetchAccommodations}
-            className="rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
-          >
-            Try Again
-          </button>
-        </div>
+  const getScoreBadge = (score: number) => {
+    if (score >= 80) return (
+      <div className="bg-green-100 text-green-700 px-3 py-1 rounded-xl font-bold inline-flex items-center gap-1.5 text-sm">
+        <FiShield className="text-xs" /> {score} - Safe
       </div>
     );
-  }
+    if (score >= 50) return (
+      <div className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-xl font-bold inline-flex items-center gap-1.5 text-sm">
+        <FiAlertCircle className="text-xs" /> {score} - Caution
+      </div>
+    );
+    return (
+      <div className="bg-red-100 text-red-700 px-3 py-1 rounded-xl font-bold inline-flex items-center gap-1.5 text-sm">
+        <FiXCircle className="text-xs" /> {score} - Avoid
+      </div>
+    );
+  };
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+        <p className="text-gray-600 font-medium">Finding safe accommodations...</p>
+      </div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Dark Gradient Header */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-700 via-primary-800 to-indigo-900">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyem0wLTRWMjhIMjR2Mmgxem0tMTItNHYySDI0di0yaDJ6bTAgNHYySDIydi0yaDJ6bTEwLThWMjJoLTJ2MmgxeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
-        <div className="relative mx-auto max-w-7xl px-6 py-12 lg:py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-          >
-            <h1 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl">
-              Accommodations
+    <div className="min-h-screen bg-gray-50 pb-20">
+      {/* Header Section */}
+      <div className="bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 py-16 lg:py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollReveal delay={0} distance={30}>
+            <h1 className="text-4xl lg:text-5xl font-extrabold text-white">
+              Find Safe Accommodations
             </h1>
-            <p className="mt-3 text-lg text-primary-200 max-w-2xl">
-              Browse verified student accommodations and check their Safety Score Index (SSI) before you move in.
+          </ScrollReveal>
+          <ScrollReveal delay={100} distance={20}>
+            <p className="mt-4 text-lg text-blue-200 max-w-2xl">
+              Search verified properties with transparent safety ratings and real student feedback.
             </p>
-          </motion.div>
-
-          {/* Quick Stats */}
-          <FadeIn delay={0.2}>
-            <div className="mt-6 flex flex-wrap gap-4">
-              <div className="rounded-lg bg-white/10 backdrop-blur-sm px-4 py-2 text-sm text-white">
-                <span className="font-semibold">{stats.total}</span> results
-              </div>
-              <div className="rounded-lg bg-emerald-500/20 px-4 py-2 text-sm text-emerald-200">
-                <span className="font-semibold">{stats.safe}</span> safe
-              </div>
-              <div className="rounded-lg bg-amber-500/20 px-4 py-2 text-sm text-amber-200">
-                <span className="font-semibold">{stats.caution}</span> caution
-              </div>
-              <div className="rounded-lg bg-red-500/20 px-4 py-2 text-sm text-red-200">
-                <span className="font-semibold">{stats.avoid}</span> avoid
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* Toolbar: Search + Filters + View Toggle */}
-      <div className="sticky top-16 z-30 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-        <div className="mx-auto max-w-7xl px-6 py-3">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            {/* Search */}
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by name, address, or area..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-10 pr-4 text-sm text-slate-900 placeholder:text-slate-400 focus:border-primary-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary-100 transition-colors"
-              />
-              {search && (
-                <button
-                   onClick={() => setSearch('')}
-                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                    aria-label="Clear search"
-                 >
-                  <XCircle className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 flex-wrap">
-              {/* Safety Filter Pills */}
-              {safetyFilters.map((f) => (
-                <button
-                   key={f.value}
-                   onClick={() => setSafetyFilter(f.value)}
-                    aria-pressed={safetyFilter === f.value}
-                   className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
-                    safetyFilter === f.value
-                      ? 'bg-primary-600 text-white shadow-sm'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {f.icon}
-                  {f.label}
-                </button>
-              ))}
-
-              <div className="h-5 w-px bg-slate-200 mx-1 hidden md:block" />
-
-              {/* View Mode Toggle */}
-              <div className="flex rounded-lg border border-slate-200 overflow-hidden">
-                <button
-                   onClick={() => setViewMode('grid')}
-                    aria-pressed={viewMode === 'grid'}
-                   className={`p-2 transition-colors ${
-                    viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
-                  }`}
-                  title="Grid view"
-                >
-                  <Grid className="h-4 w-4" />
-                </button>
-                <button
-                   onClick={() => setViewMode('list')}
-                    aria-pressed={viewMode === 'list'}
-                   className={`p-2 transition-colors ${
-                    viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
-                  }`}
-                  title="List view"
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Map Toggle */}
-              <button
-                 onClick={() => setShowMap(!showMap)}
-                  aria-pressed={showMap}
-                 className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
-                  showMap
-                    ? 'border-primary-300 bg-primary-50 text-primary-700'
-                    : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                <Map className="h-3.5 w-3.5" />
-                {showMap ? 'Hide Map' : 'Show Map'}
-              </button>
-            </div>
-          </div>
+          </ScrollReveal>
         </div>
       </div>
 
-      {/* Map View */}
-      {showMap && (
-        <FadeIn className="transition-all duration-300">
-          <div className="mx-auto max-w-7xl px-6 pt-6">
-            <div className="h-[400px] rounded-xl overflow-hidden border border-slate-200 shadow-sm">
-              <SafetyMap
-                mode="timeline"
-                selectedMonth={new Date().toISOString().slice(0, 7)}
-                selectedMarker={null}
-                onMarkerSelect={() => {}}
-                filter="all"
-                accommodationId={null}
-                collegeId={null}
-                selectedHotspotId={null}
-                routeComparisonMode={false}
-                comparisonAccId={null}
-                flyToAreaMarkers={[]}
-              />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-10">
+        {/* Search and Filters Card */}
+        <ScrollReveal delay={0} distance={40}>
+          <div className="bg-white rounded-3xl shadow-xl p-6 lg:p-8 mb-8 border border-gray-100 relative z-10">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Search Input */}
+              <div className="flex-grow relative">
+                <FiSearch className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                <input
+                  type="text"
+                  placeholder="Search by name, location, or city..."
+                  className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none text-gray-700 placeholder-gray-400 font-medium"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+
+              {/* Filter Pills & View Toggles */}
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex gap-2 flex-wrap bg-gray-50 p-1 rounded-2xl border border-gray-100">
+                  <StaggerReveal stagger={50}>
+                    {[
+                      { id: 'all', label: 'All' },
+                      { id: 'safe', label: '🟢 Safe (80+)' },
+                      { id: 'caution', label: '🟡 Caution (50-79)' },
+                      { id: 'avoid', label: '🔴 Avoid (<50)' }
+                    ].map(filter => (
+                      <button
+                        key={filter.id}
+                        onClick={() => setSelectedFilter(filter.id)}
+                        className={`px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${
+                          selectedFilter === filter.id
+                            ? 'bg-white text-blue-600 shadow-sm'
+                            : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        {filter.label}
+                      </button>
+                    ))}
+                  </StaggerReveal>
+                </div>
+
+                <div className="h-8 w-[1px] bg-gray-200 hidden lg:block mx-2"></div>
+
+                <FadeIn delay={200}>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-3 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                      title="Grid View"
+                    >
+                      <FiGrid className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-3 rounded-xl transition-all ${viewMode === 'list' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/25' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                      title="List View"
+                    >
+                      <FiList className="h-5 w-5" />
+                    </button>
+                    <button
+                      onClick={() => setShowMap(!showMap)}
+                      className={`p-3 rounded-xl transition-all ${showMap ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}
+                      title="Map View"
+                    >
+                      <FiMap className="h-5 w-5" />
+                    </button>
+                  </div>
+                </FadeIn>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-4 pt-6 border-t border-gray-50">
+              <FadeIn delay={100}>
+                <p className="text-sm font-bold text-gray-500 uppercase tracking-widest">
+                  Showing <span className="text-blue-600">{filteredAccommodations.length}</span> verified accommodations
+                </p>
+              </FadeIn>
             </div>
           </div>
-        </FadeIn>
-      )}
+        </ScrollReveal>
 
-      {/* Accommodation List / Grid */}
-      <div className="mx-auto max-w-7xl px-6 py-6">
-        {filtered.length === 0 ? (
-          <ScrollReveal>
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="rounded-full bg-primary-100 p-4 mb-4">
-                <Home className="h-8 w-8 text-primary-500" />
-              </div>
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">No accommodations found</h3>
-              <p className="text-slate-500 mb-6 max-w-sm">
-                {search
-                  ? `No results match "${search}". Try a different search term.`
-                  : 'No accommodations are registered yet.'}
-              </p>
-              {!search && (
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 rounded-lg bg-primary-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-primary-700 transition-colors"
-                >
-                  Register Your Property
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
-              )}
+        {/* Map Section */}
+        {showMap && (
+          <ScrollReveal delay={0} direction="down" distance={30}>
+            <div className="mb-8 rounded-3xl shadow-xl border-4 border-white overflow-hidden h-[500px]">
+              <AccommodationMap />
             </div>
           </ScrollReveal>
-        ) : viewMode === 'grid' ? (
-          <StaggerReveal className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filtered.map((acc) => (
-              <AccommodationGridCard key={acc._id} accommodation={acc} />
-            ))}
-          </StaggerReveal>
+        )}
+
+        {/* Error Message */}
+        {error && (
+          <ScaleIn delay={0} scale={0.95}>
+            <div className="bg-red-50 border border-red-100 text-red-700 p-6 rounded-2xl mb-8 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FiAlertTriangle className="h-6 w-6 text-red-500" />
+                <p className="font-bold">{error}</p>
+              </div>
+              <button 
+                onClick={() => { setError(""); setLoading(true); fetchAccommodations(); }}
+                className="bg-white text-red-600 px-6 py-2 rounded-xl font-bold border border-red-200 hover:bg-red-50 transition-all"
+              >
+                Retry Search
+              </button>
+            </div>
+          </ScaleIn>
+        )}
+
+        {/* Results */}
+        {filteredAccommodations.length === 0 ? (
+          <ScaleIn delay={0} scale={0.9}>
+            <div className="text-center py-20 bg-white rounded-3xl shadow-sm border border-gray-100 max-w-2xl mx-auto">
+              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <FiSearch className="text-gray-300 text-3xl" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-700 mb-2">No accommodations found in this area</h3>
+              <p className="text-gray-500 mb-8 max-w-md mx-auto px-4">
+                Know a property that should be here? Ask owners to register for free and join the safety movement.
+              </p>
+              <Link 
+                to="/owner/register" 
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-8 py-3 rounded-xl font-bold inline-flex items-center gap-2 hover:shadow-xl transition-all"
+              >
+                Register Property <FiArrowRight />
+              </Link>
+            </div>
+          </ScaleIn>
         ) : (
-          <StaggerReveal className="flex flex-col gap-3">
-            {filtered.map((acc) => (
-              <AccommodationListRow key={acc._id} accommodation={acc} />
+          <StaggerReveal 
+            stagger={80} 
+            className={viewMode === 'grid' 
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" 
+              : "space-y-6"
+            }
+          >
+            {filteredAccommodations.map(accommodation => (
+              <Link 
+                key={accommodation._id} 
+                to={`/accommodations/${accommodation._id}`}
+                className={`group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100 overflow-hidden flex ${viewMode === 'list' ? 'flex-row items-center p-4' : 'flex-col'}`}
+              >
+                {/* Image / Thumbnail */}
+                <div className={`${viewMode === 'list' ? 'w-40 h-40 rounded-2xl' : 'w-full h-56'} bg-slate-50 relative overflow-hidden flex-shrink-0`}>
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                    <FiHome className="h-12 w-12 text-slate-200 group-hover:scale-110 transition-transform duration-500" />
+                  </div>
+                  <div className="absolute top-4 left-4">
+                    {getScoreBadge(accommodation.trustScore ?? 0)}
+                  </div>
+                  <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors duration-500"></div>
+                </div>
+
+                <div className={`${viewMode === 'list' ? 'px-8 flex-grow' : 'p-6 lg:p-8'}`}>
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors truncate">
+                      {accommodation.name}
+                    </h3>
+                  </div>
+                  
+                  <div className="flex items-center text-gray-500 mb-6 text-sm font-medium">
+                    <FiMapPin className="h-4 w-4 mr-2 text-blue-500" />
+                    <span className="truncate">{accommodation.address}, {accommodation.city}</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 mb-6 py-5 border-y border-gray-50">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total Reports</p>
+                      <p className="text-lg font-black text-gray-900 flex items-center gap-1.5">
+                        <FiAlertTriangle className="text-red-500 h-4 w-4" /> {accommodation.totalReports || 0}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Resolved</p>
+                      <p className="text-lg font-black text-gray-900 flex items-center gap-1.5">
+                        <FiCheckCircle className="text-green-500 h-4 w-4" /> {accommodation.resolvedReports || 0}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-bold text-gray-400">
+                      {accommodation.type || 'Hostel/PG'}
+                    </span>
+                    <span className="text-blue-600 font-bold text-sm flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      View Safety Profile <FiArrowRight className="text-xs" />
+                    </span>
+                  </div>
+                </div>
+              </Link>
             ))}
           </StaggerReveal>
         )}
       </div>
     </div>
   );
-}
-
-/* ---------- Grid Card ---------- */
-
-function AccommodationGridCard({ accommodation: acc }: { accommodation: Accommodation }) {
-  const badge = getScoreBadge(acc.ssi);
-  return (
-    <Link
-      to={`/accommodations/${acc._id}`}
-      className={`group block rounded-xl border ${getScoreBorderColor(acc.ssi)} bg-white shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden`}
-    >
-      {/* Score accent bar */}
-      <div className={`h-1.5 ${getScoreBarColor(acc.ssi)}`} />
-
-      <div className="p-5">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="min-w-0 flex-1">
-            <h3 className="text-base font-semibold text-slate-900 truncate group-hover:text-primary-600 transition-colors">
-              {acc.name}
-            </h3>
-            <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{acc.area}{acc.city ? `, ${acc.city}` : ''}</span>
-            </div>
-          </div>
-          {/* SSI Score Badge */}
-          <div className="shrink-0 text-center">
-            <div className={`inline-flex items-center justify-center w-14 h-14 rounded-xl ${badge.bg} font-bold text-lg`}>
-              {acc.ssi}
-            </div>
-          </div>
-        </div>
-
-        {/* Address */}
-        <p className="text-xs text-slate-400 mb-4 line-clamp-1">{acc.address}</p>
-
-        {/* Meta row */}
-        <div className="flex items-center gap-3 text-xs text-slate-500">
-          <span className="inline-flex items-center gap-1">
-            <AlertTriangle className="h-3 w-3" />
-            {acc.totalReports} {acc.totalReports === 1 ? 'report' : 'reports'}
-          </span>
-          {acc.type && (
-            <span className="inline-flex items-center gap-1 capitalize">
-              <Home className="h-3 w-3" />
-              {acc.type}
-            </span>
-          )}
-          {acc.monthlyRent != null && (
-            <span className="inline-flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" />
-              &#8377;{acc.monthlyRent.toLocaleString('en-IN')}/mo
-            </span>
-          )}
-        </div>
-
-        {/* Amenities preview */}
-        {acc.amenities && acc.amenities.length > 0 && (
-          <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-1.5">
-            {acc.amenities.slice(0, 3).map((a) => (
-              <span
-                key={a}
-                className="inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600"
-              >
-                <Wrench className="h-2.5 w-2.5" />
-                {a}
-              </span>
-            ))}
-            {acc.amenities.length > 3 && (
-              <span className="text-[11px] text-slate-400 self-center">
-                +{acc.amenities.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* View details link */}
-        <div className="mt-4 flex items-center justify-end text-xs font-medium text-primary-600 group-hover:text-primary-700">
-          View Details
-          <ArrowRight className="ml-1 h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-/* ---------- List Row ---------- */
-
-function AccommodationListRow({ accommodation: acc }: { accommodation: Accommodation }) {
-  const badge = getScoreBadge(acc.ssi);
-  return (
-    <Link
-      to={`/accommodations/${acc._id}`}
-      className={`group flex items-center gap-4 rounded-xl border ${getScoreBorderColor(acc.ssi)} bg-white px-5 py-4 shadow-sm hover:shadow-md transition-all duration-200`}
-    >
-      {/* Score */}
-      <div className={`shrink-0 flex items-center justify-center w-14 h-14 rounded-xl ${badge.bg} font-bold text-lg`}>
-        {acc.ssi}
-      </div>
-
-      {/* Content */}
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold text-slate-900 truncate group-hover:text-primary-600 transition-colors">
-            {acc.name}
-          </h3>
-          {acc.type && (
-            <span className="shrink-0 inline-flex items-center gap-1 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-600 capitalize">
-              {acc.type}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1 mt-1 text-xs text-slate-500">
-          <MapPin className="h-3 w-3 shrink-0" />
-          <span className="truncate">{acc.address}, {acc.area}{acc.city ? `, ${acc.city}` : ''}</span>
-        </div>
-      </div>
-
-      {/* Meta */}
-      <div className="hidden sm:flex items-center gap-4 shrink-0 text-xs text-slate-500">
-        <span className="inline-flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3" />
-          {acc.totalReports} reports
-        </span>
-        {acc.monthlyRent != null && (
-          <span className="inline-flex items-center gap-1">
-            &#8377;{acc.monthlyRent.toLocaleString('en-IN')}/mo
-          </span>
-        )}
-      </div>
-
-      {/* Arrow */}
-      <ArrowRight className="h-4 w-4 text-slate-300 group-hover:text-primary-500 group-hover:translate-x-0.5 transition-all shrink-0" />
-    </Link>
-  );
-}
+};

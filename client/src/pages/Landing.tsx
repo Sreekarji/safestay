@@ -2,12 +2,33 @@ import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Shield, PenLine, Brain, ShieldCheck, BarChart3, Globe, Volume2, MapPin, Zap, ArrowRight } from 'lucide-react';
+import {
+  Shield,
+  PenLine,
+  Brain,
+  ShieldCheck,
+  BarChart3,
+  Globe,
+  Volume2,
+  MapPin,
+  Zap,
+  ArrowRight,
+  Check,
+  ChevronRight,
+  Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import api from '@/services/api';
 
-const anim = { initial: { opacity: 0, y: 30 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5 } };
+const fadeUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+};
+
+const stagger = {
+  animate: { transition: { staggerChildren: 0.08 } },
+};
 
 export function Landing() {
   const { t } = useTranslation();
@@ -26,7 +47,7 @@ export function Landing() {
           });
         }
       })
-      .catch(() => { /* fall back to hardcoded */ })
+      .catch(() => {})
       .finally(() => setStatsLoading(false));
   }, []);
 
@@ -36,11 +57,13 @@ export function Landing() {
     { value: '3', label: t('landing.stat3') },
     { value: statsLoading ? '...' : liveStats?.cities ? `${liveStats.cities}+` : '15+', label: t('landing.stat4') },
   ];
+
   const steps = [
     { num: 1, icon: PenLine, title: t('landing.step1Title'), desc: t('landing.step1Desc') },
     { num: 2, icon: Brain, title: t('landing.step2Title'), desc: t('landing.step2Desc') },
     { num: 3, icon: ShieldCheck, title: t('landing.step3Title'), desc: t('landing.step3Desc') },
   ];
+
   const features = [
     { icon: Brain, title: t('landing.feature1Title'), desc: t('landing.feature1Desc') },
     { icon: BarChart3, title: t('landing.feature2Title'), desc: t('landing.feature2Desc') },
@@ -51,46 +74,127 @@ export function Landing() {
   ];
 
   return (
-    <div className="bg-white dark:bg-slate-950">
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800 text-white">
-        <div className="mx-auto max-w-7xl px-6 py-24 lg:py-32">
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-8 items-center">
-            <motion.div {...anim}>
-              <h1 className="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl leading-tight">{t('landing.hero')}</h1>
-              <p className="mt-6 text-lg text-primary-100 max-w-lg">{t('landing.heroSub')}</p>
-              <div className="mt-8 flex flex-wrap gap-4">
-                <Link to="/register"><Button size="lg" className="bg-white text-primary-700 hover:bg-primary-50 shadow-lg">{t('landing.getStarted')} <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
-                <Link to="/map"><Button size="lg" variant="outline" className="border-white/30 bg-transparent text-white hover:bg-white/10">{t('landing.viewMap')}</Button></Link>
-              </div>
+    <div className="bg-canvas dark:bg-[#0a0a0a]">
+      {/* ── Announcement Banner ─────────────────────────── */}
+      <div className="relative z-10 flex justify-center pt-20 pb-4">
+        <Link
+          to="/register"
+          className="inline-flex items-center gap-2 rounded-full bg-canvas-soft dark:bg-[#1a1a1a] border border-hairline dark:border-[#333333] px-4 py-1.5 text-xs font-medium text-body dark:text-[#888888] hover:border-hairline-strong dark:hover:border-[#555555] transition-colors"
+        >
+          <Sparkles className="h-3 w-3" />
+          Introducing SafeStay — AI-powered safety for students
+          <ChevronRight className="h-3 w-3" />
+        </Link>
+      </div>
+
+      {/* ── Hero Section ────────────────────────────────── */}
+      <section className="relative overflow-hidden">
+        {/* Mesh gradient backdrop */}
+        <div className="absolute inset-0 mesh-gradient opacity-60" />
+        <div className="absolute inset-0 grid-pattern opacity-40" />
+
+        <div className="relative mx-auto max-w-[1400px] px-6 pt-16 pb-32 lg:pt-24 lg:pb-40">
+          <motion.div
+            initial="initial"
+            animate="animate"
+            variants={stagger}
+            className="max-w-3xl"
+          >
+            <motion.h1
+              variants={fadeUp}
+              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+              className="text-5xl sm:text-6xl lg:text-7xl font-semibold tracking-[-0.04em] leading-[1.1] text-ink dark:text-white"
+            >
+              {t('landing.hero')}
+            </motion.h1>
+            <motion.p
+              variants={fadeUp}
+              transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }}
+              className="mt-6 text-lg sm:text-xl text-body dark:text-[#888888] max-w-xl leading-relaxed"
+            >
+              {t('landing.heroSub')}
+            </motion.p>
+            <motion.div variants={fadeUp} transition={{ duration: 0.5, ease: [0.25, 0.1, 0.25, 1] }} className="mt-10 flex flex-wrap gap-3">
+              <Link to="/register">
+                <Button size="lg" className="h-12 px-6 text-base">
+                  {t('landing.getStarted')}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </Link>
+              <Link to="/map">
+                <Button size="lg" variant="outline" className="h-12 px-6 text-base">
+                  {t('landing.viewMap')}
+                </Button>
+              </Link>
             </motion.div>
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, delay: 0.2 }} className="flex justify-center">
-              <div className="relative"><Shield className="h-48 w-48 text-white/20" strokeWidth={1} /><div className="absolute inset-0 flex items-center justify-center"><Shield className="h-24 w-24 text-white" strokeWidth={1.5} /></div></div>
-            </motion.div>
-          </div>
+          </motion.div>
+
+          {/* Decorative mesh orbs */}
+          <div className="absolute top-1/2 right-0 -translate-y-1/2 translate-x-1/4 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#007cf0]/10 via-[#7928ca]/8 to-[#ff0080]/6 blur-3xl pointer-events-none" />
+          <div className="absolute bottom-0 left-1/3 -translate-x-1/2 translate-y-1/2 w-[400px] h-[400px] rounded-full bg-gradient-to-tr from-[#50e3c2]/10 to-[#007cf0]/8 blur-3xl pointer-events-none" />
         </div>
       </section>
 
-      <section className="relative -mt-8 z-10 mx-auto max-w-5xl px-6">
+      {/* ── Stats Strip ─────────────────────────────────── */}
+      <section className="relative z-10 -mt-12 mx-auto max-w-5xl px-6">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           {stats.map((s, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-              <Card className="p-5 text-center hover:shadow-card-hover transition-shadow"><p className="text-2xl font-bold text-primary-600">{s.value}</p><p className="text-sm text-slate-500 mt-1">{s.label}</p></Card>
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 + i * 0.1 }}
+            >
+              <Card className="p-5 text-center card-shadow-3 hover:card-shadow-4 transition-shadow">
+                <p className="text-2xl font-semibold text-ink dark:text-white tracking-tight">{s.value}</p>
+                <p className="text-xs text-body dark:text-[#888888] mt-1 font-medium">{s.label}</p>
+              </Card>
             </motion.div>
           ))}
         </div>
       </section>
 
-      <section className="py-20 px-6">
+      {/* ── How It Works ────────────────────────────────── */}
+      <section className="py-24 sm:py-32 px-6">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">{t('landing.howItWorks')}</h2>
-          <div className="grid gap-8 md:grid-cols-3">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="text-[11px] font-medium uppercase tracking-wider text-mute dark:text-[#666666] font-mono">
+              How it works
+            </span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-[-0.03em] text-ink dark:text-white">
+              {t('landing.howItWorks')}
+            </h2>
+          </motion.div>
+          <div className="grid gap-6 md:grid-cols-3">
             {steps.map((s, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }} whileHover={{ y: -4 }}>
-                <Card className="p-6 text-center hover:shadow-card-hover transition-all h-full">
-                  <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary-100"><s.icon className="h-7 w-7 text-primary-600" /></div>
-                  <div className="text-xs font-bold text-primary-600 mb-2">{t('landing.step')} {s.num}</div>
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">{s.title}</h3>
-                  <p className="text-sm text-slate-500">{s.desc}</p>
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                whileHover={{ y: -4 }}
+              >
+                <Card className="p-8 h-full card-shadow-2 hover:card-shadow-3 transition-all group">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-canvas-soft dark:bg-[#1a1a1a] border border-hairline dark:border-[#333333] group-hover:border-ink/20 dark:group-hover:border-white/20 transition-colors">
+                      <s.icon className="h-5 w-5 text-ink dark:text-white" />
+                    </div>
+                    <span className="text-[11px] font-mono font-medium text-mute dark:text-[#666666] uppercase tracking-wider">
+                      Step {s.num}
+                    </span>
+                  </div>
+                  <h3 className="text-lg font-semibold text-ink dark:text-white mb-2 tracking-tight">
+                    {s.title}
+                  </h3>
+                  <p className="text-sm text-body dark:text-[#888888] leading-relaxed">
+                    {s.desc}
+                  </p>
                 </Card>
               </motion.div>
             ))}
@@ -98,16 +202,41 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-slate-50">
+      {/* ── Features Grid ───────────────────────────────── */}
+      <section className="py-24 sm:py-32 px-6 bg-canvas-soft dark:bg-[#111111]">
         <div className="mx-auto max-w-5xl">
-          <h2 className="text-3xl font-bold text-center text-slate-900 mb-12">{t('landing.features')}</h2>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <span className="text-[11px] font-medium uppercase tracking-wider text-mute dark:text-[#666666] font-mono">
+              Features
+            </span>
+            <h2 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-[-0.03em] text-ink dark:text-white">
+              {t('landing.features')}
+            </h2>
+          </motion.div>
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {features.map((f, i) => (
-              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
-                <Card className="p-6 hover:shadow-card-hover hover:border-primary-200 transition-all h-full">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary-100"><f.icon className="h-6 w-6 text-primary-600" /></div>
-                  <h3 className="text-base font-semibold text-slate-900 mb-1">{f.title}</h3>
-                  <p className="text-sm text-slate-500">{f.desc}</p>
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.06 }}
+              >
+                <Card className="p-6 h-full card-shadow-1 hover:card-shadow-2 transition-all group">
+                  <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-canvas dark:bg-[#1a1a1a] border border-hairline dark:border-[#333333] group-hover:border-ink/20 dark:group-hover:border-white/20 transition-colors">
+                    <f.icon className="h-5 w-5 text-ink dark:text-white" />
+                  </div>
+                  <h3 className="text-sm font-semibold text-ink dark:text-white mb-1.5">
+                    {f.title}
+                  </h3>
+                  <p className="text-sm text-body dark:text-[#888888] leading-relaxed">
+                    {f.desc}
+                  </p>
                 </Card>
               </motion.div>
             ))}
@@ -115,14 +244,34 @@ export function Landing() {
         </div>
       </section>
 
-      <section className="py-20 px-6 bg-primary-600">
-        <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">{t('landing.cta')}</h2>
-          <p className="text-primary-100 mb-8">{t('landing.heroSub')}</p>
-          <Link to="/register"><Button size="lg" className="bg-white text-primary-700 hover:bg-primary-50 shadow-lg">{t('landing.ctaButton')} <ArrowRight className="ml-2 h-4 w-4" /></Button></Link>
+      {/* ── Dark CTA Band ───────────────────────────────── */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-ink dark:bg-white" />
+        <div className="absolute inset-0 grid-pattern opacity-20 dark:opacity-10" style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)' }} />
+        <div className="relative mx-auto max-w-3xl text-center py-24 sm:py-32 px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-semibold tracking-[-0.03em] text-white dark:text-ink mb-4">
+              {t('landing.cta')}
+            </h2>
+            <p className="text-[#888888] dark:text-body mb-10 text-lg max-w-lg mx-auto">
+              {t('landing.heroSub')}
+            </p>
+            <Link to="/register">
+              <Button
+                size="lg"
+                className="h-12 px-8 text-base bg-white text-ink hover:bg-gray-100 dark:bg-ink dark:text-white dark:hover:bg-black"
+              >
+                {t('landing.ctaButton')}
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </section>
-
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { authLimiter } from '../middleware/rateLimiter.js';
 import { sendEmail } from '../utils/emailService.js';
 import { otpEmailTemplate, welcomeEmailTemplate } from '../utils/emailTemplates.js';
 import { isCollegeEmail, extractCollegeFromEmail } from '../utils/collegeVerification.js';
-import { cloudinary } from '../config/cloudinary.js';
+import { cloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
 import multer from 'multer';
 
 const router = Router();
@@ -179,7 +179,9 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
           name: user.name,
           role: user.role,
           college: user.college,
+          collegeName: user.collegeName,
           isVerified: user.isVerified,
+          isCollegeVerified: user.isCollegeVerified,
           ownerVerification: user.ownerVerification,
         },
         token,
@@ -231,17 +233,25 @@ router.post('/register-owner', authLimiter, upload.fields([
     const files = (req.files || {}) as { [fieldname: string]: Express.Multer.File[] };
     const uploadPromises: Promise<string>[] = [];
 
-    for (const field of ['governmentId', 'propertyProof', 'businessRegistration']) {
-      if (files[field]?.[0]) {
-        const b64 = files[field][0].buffer.toString('base64');
-        const dataURI = `data:${files[field][0].mimetype};base64,${b64}`;
-        uploadPromises.push(
-          cloudinary.uploader.upload(dataURI, {
-            folder: 'safestay/owner-documents',
-            resource_type: 'auto',
-          }).then(result => result.secure_url)
-        );
+    console.log('[register-owner] isCloudinaryConfigured:', isCloudinaryConfigured());
+    console.log('[register-owner] cloudinary.uploader:', typeof cloudinary.uploader);
+    console.log('[register-owner] files:', Object.keys(files));
+
+    if (isCloudinaryConfigured()) {
+      for (const field of ['governmentId', 'propertyProof', 'businessRegistration']) {
+        if (files[field]?.[0]) {
+          const b64 = files[field][0].buffer.toString('base64');
+          const dataURI = `data:${files[field][0].mimetype};base64,${b64}`;
+          uploadPromises.push(
+            cloudinary.uploader.upload(dataURI, {
+              folder: 'safestay/owner-documents',
+              resource_type: 'auto',
+            }).then(result => result.secure_url)
+          );
+        }
       }
+    } else {
+      console.warn('⚠️ Cloudinary not configured — skipping document uploads');
     }
 
     let uploadedUrls: string[] = [];
@@ -322,10 +332,13 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response) => {
         phone: user.phone,
         role: user.role,
         college: user.college,
+        collegeName: user.collegeName,
         studentId: user.studentId,
         isVerified: user.isVerified,
+        isCollegeVerified: user.isCollegeVerified,
         isBanned: user.isBanned,
         profilePhoto: user.profilePhoto,
+        notificationPrefs: user.notificationPrefs,
         ownerVerification: user.ownerVerification,
         createdAt: user.createdAt,
       },

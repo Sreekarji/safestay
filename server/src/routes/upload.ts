@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import multer from 'multer';
-import { cloudinary } from '../config/cloudinary.js';
+import { cloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
 import { authMiddleware, AuthRequest } from '../middleware/authMiddleware.js';
 import { uploadLimiter } from '../middleware/rateLimiter.js';
 
@@ -24,6 +24,15 @@ const upload = multer({
 // ========================
 router.post('/', authMiddleware, uploadLimiter, upload.array('images', 5), async (req: AuthRequest, res: Response) => {
   try {
+    if (!isCloudinaryConfigured()) {
+      res.status(500).json({
+        success: false,
+        error: 'Image upload service is not configured. Please contact admin.',
+        code: 'SERVICE_UNAVAILABLE',
+      });
+      return;
+    }
+
     const files = req.files as Express.Multer.File[];
 
     if (!files || files.length === 0) {

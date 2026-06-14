@@ -9,7 +9,6 @@ import {
   Bell,
   LogOut,
   User,
-  Settings,
   Menu,
   X,
   ClipboardList,
@@ -71,11 +70,11 @@ export function Navbar() {
   const navItems = getNavItems(user?.role);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-white border-b border-slate-200 shadow-sm">
-      <div className="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6">
-        <Link to="/" className="flex items-center gap-2">
-          <Shield className="h-7 w-7 text-primary-600" />
-          <span className="text-xl font-bold text-primary-600">SafeStay</span>
+    <header className="fixed top-0 left-0 right-0 z-40 h-16 bg-canvas/80 backdrop-blur-xl border-b border-hairline dark:bg-[#0a0a0a]/80 dark:border-[#333333]">
+      <div className="mx-auto flex h-full max-w-[1400px] items-center justify-between px-6">
+        <Link to="/" className="flex items-center gap-2.5">
+          <Shield className="h-6 w-6 text-ink dark:text-white" strokeWidth={2} />
+          <span className="text-lg font-semibold tracking-tight text-ink dark:text-white">SafeStay</span>
         </Link>
         {isAuthenticated && (
           <nav className="hidden md:flex items-center gap-1">
@@ -84,10 +83,10 @@ export function Navbar() {
                 key={item.to}
                 to={item.to}
                 className={({ isActive }) =>
-                  `flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  `flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm transition-colors ${
                     isActive
-                      ? 'text-primary-600 bg-primary-50 border-b-2 border-primary-600'
-                      : 'text-slate-600 hover:text-primary-500 hover:bg-slate-50'
+                      ? 'text-ink bg-canvas-soft dark:text-white dark:bg-[#1a1a1a]'
+                      : 'text-body hover:text-ink hover:bg-canvas-soft dark:hover:text-white dark:hover:bg-[#1a1a1a]'
                   }`
                 }
               >
@@ -99,27 +98,35 @@ export function Navbar() {
         )}
         <div className="flex items-center gap-2">
           <LanguageToggle />
-          {isAuthenticated && (
+          {isAuthenticated ? (
             <>
-              <button onClick={() => navigate('/my-reports')} className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 transition-colors" title="Notifications">
-                <Bell className="h-5 w-5" />
-                {hasNotifications && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />}
+              <button
+                onClick={() => navigate('/my-reports')}
+                className="relative rounded-full p-2 text-body hover:text-ink hover:bg-canvas-soft dark:text-[#888888] dark:hover:text-white dark:hover:bg-[#1a1a1a] transition-colors"
+                title="Notifications"
+              >
+                <Bell className="h-4 w-4" />
+                {hasNotifications && (
+                  <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-error" />
+                )}
               </button>
               <DropdownMenu
                 trigger={
-                  <button>
+                  <button className="flex items-center gap-2 rounded-full p-1 hover:bg-canvas-soft dark:hover:bg-[#1a1a1a] transition-colors">
                     <Avatar
                       fallback={user?.name?.charAt(0)?.toUpperCase() || 'U'}
-                      className="h-8 w-8 cursor-pointer"
+                      className="h-7 w-7"
                     />
                   </button>
                 }
                 align="right"
               >
-                <div className="px-2 py-1.5 border-b border-slate-100 mb-1">
-                  <p className="text-sm font-medium text-slate-900">{user?.name}</p>
-                  <p className="text-xs text-slate-500">{user?.email}</p>
-                  <p className="text-xs text-primary-600 capitalize mt-0.5">{user?.role}</p>
+                <div className="px-3 py-2 border-b border-hairline dark:border-[#333333] mb-1">
+                  <p className="text-sm font-medium text-ink dark:text-white">{user?.name}</p>
+                  <p className="text-xs text-body dark:text-[#888888]">{user?.email}</p>
+                  <span className="inline-block mt-1 rounded-full bg-canvas-soft dark:bg-[#1a1a1a] px-2 py-0.5 text-[10px] font-medium text-body dark:text-[#888888] uppercase tracking-wider">
+                    {user?.role}
+                  </span>
                 </div>
                 <DropdownMenuItem onClick={() => navigate('/profile')}>
                   <User className="mr-2 h-4 w-4" />
@@ -149,33 +156,48 @@ export function Navbar() {
                 </DropdownMenuItem>
               </DropdownMenu>
               <button
-                className="md:hidden rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+                className="md:hidden rounded-full p-2 text-body hover:text-ink hover:bg-canvas-soft dark:text-[#888888] dark:hover:text-white dark:hover:bg-[#1a1a1a]"
                 onClick={() => setMobileOpen(true)}
               >
                 <Menu className="h-5 w-5" />
               </button>
             </>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                to="/login"
+                className="hidden sm:inline-flex items-center h-8 rounded-md px-3 text-sm font-medium text-ink hover:bg-canvas-soft dark:text-white dark:hover:bg-[#1a1a1a] transition-colors"
+              >
+                {t('nav.login')}
+              </Link>
+              <Link
+                to="/register"
+                className="inline-flex items-center h-8 rounded-md bg-ink text-white px-3 text-sm font-medium hover:bg-black dark:bg-white dark:text-ink dark:hover:bg-gray-100 transition-colors"
+              >
+                {t('nav.signUp')}
+              </Link>
+            </div>
           )}
         </div>
       </div>
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
-          <div className="fixed right-0 top-0 bottom-0 w-72 bg-white shadow-xl p-6">
-            <button onClick={() => setMobileOpen(false)} className="absolute right-4 top-4">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
+          <div className="fixed right-0 top-0 bottom-0 w-72 bg-canvas dark:bg-[#0a0a0a] border-l border-hairline dark:border-[#333333] p-6 card-shadow-5">
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="absolute right-4 top-4 rounded-full p-2 text-body hover:text-ink hover:bg-canvas-soft dark:text-[#888888] dark:hover:text-white dark:hover:bg-[#1a1a1a]"
+            >
               <X className="h-5 w-5" />
             </button>
-            <div className="mt-8 flex flex-col gap-2">
-              <div className="flex items-center gap-2 mb-6 px-2">
-                <Shield className="h-6 w-6 text-primary-600" />
-                <span className="text-lg font-bold text-primary-600">SafeStay</span>
+            <div className="mt-8 flex flex-col gap-1">
+              <div className="flex items-center gap-2.5 mb-6 px-2">
+                <Shield className="h-5 w-5 text-ink dark:text-white" strokeWidth={2} />
+                <span className="text-base font-semibold text-ink dark:text-white">SafeStay</span>
               </div>
-              {/* Role badge */}
-              <div className="mb-4 px-2">
-                <span className="inline-block rounded-full bg-primary-50 px-3 py-1 text-xs font-medium text-primary-700 capitalize">
-                  {user?.role}
-                </span>
-              </div>
+              <span className="inline-block w-fit rounded-full bg-canvas-soft dark:bg-[#1a1a1a] px-2.5 py-0.5 text-[10px] font-medium text-body dark:text-[#888888] uppercase tracking-wider mb-3 mx-2">
+                {user?.role}
+              </span>
               {navItems.map((item) => (
                 <NavLink
                   key={item.to}
@@ -183,23 +205,25 @@ export function Navbar() {
                   onClick={() => setMobileOpen(false)}
                   className={({ isActive }) =>
                     `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                      isActive ? 'text-primary-600 bg-primary-50' : 'text-slate-600 hover:bg-slate-50'
+                      isActive
+                        ? 'text-ink bg-canvas-soft dark:text-white dark:bg-[#1a1a1a]'
+                        : 'text-body hover:bg-canvas-soft dark:text-[#888888] dark:hover:bg-[#1a1a1a]'
                     }`
                   }
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-4 w-4" />
                   {t(item.labelKey)}
                 </NavLink>
               ))}
-              <div className="mt-4 border-t border-slate-200 pt-4">
+              <div className="mt-4 border-t border-hairline dark:border-[#333333] pt-4">
                 <button
                   onClick={() => {
                     handleLogout();
                     setMobileOpen(false);
                   }}
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-error hover:bg-error-soft dark:hover:bg-[rgba(238,0,0,0.1)]"
                 >
-                  <LogOut className="h-5 w-5" />
+                  <LogOut className="h-4 w-4" />
                   {t('nav.logout')}
                 </button>
               </div>

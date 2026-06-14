@@ -26,7 +26,7 @@ export function ImageUpload({ value = [], onChange, maxFiles = MAX_FILES, classN
   const uploadFile = async (file: File): Promise<string> => {
     const token = useAuthStore.getState().token;
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('images', file);
 
     const res = await fetch(`${API_URL}/api/upload`, {
       method: 'POST',
@@ -40,6 +40,11 @@ export function ImageUpload({ value = [], onChange, maxFiles = MAX_FILES, classN
     }
 
     const data = await res.json();
+    // Server returns: { success: true, data: { images: string[], publicIds: string[] } }
+    const images = data.data?.images;
+    if (images && Array.isArray(images) && images.length > 0) {
+      return images[0];
+    }
     return data.url || data.data?.url || data.secure_url || data.data?.secure_url;
   };
 
