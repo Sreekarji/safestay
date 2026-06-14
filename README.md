@@ -570,8 +570,6 @@ npm run dev
 
 ## Documentation
 
-- [API Reference](docs/API.md) — Detailed API documentation
-- [Database Schema](docs/DATABASE.md) — MongoDB models and relationships
 - [Design System](DESIGN.md) — Vercel-inspired design language spec
 
 ---
