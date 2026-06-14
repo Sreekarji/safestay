@@ -255,15 +255,15 @@ export default function AdminDashboard() {
   const filteredReports = reports.filter(r => {
     // Status filter
     const matchesStatus = filter === 'all' || r.status === filter;
-    
+
     // AI filter
     let matchesAI = true;
     if (aiFilter === 'ai-verified') {
-      matchesAI = r.aiVerification?.verdict === 'VERIFIED';
+      matchesAI = r.status === 'ai_verified';
     } else if (aiFilter === 'ai-rejected') {
-      matchesAI = r.aiVerification?.verdict === 'REJECTED';
+      matchesAI = r.status === 'rejected';
     } else if (aiFilter === 'needs-review') {
-      matchesAI = r.aiVerification?.verdict === 'NEEDS_REVIEW' || r.aiVerification?.recommendAdminReview === true;
+      matchesAI = r.status === 'review' || r.status === 'pending';
     } else if (aiFilter === 'no-ai') {
       matchesAI = !r.aiVerification;
     }

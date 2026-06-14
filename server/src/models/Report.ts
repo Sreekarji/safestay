@@ -11,8 +11,8 @@ export interface IReport extends Document {
   description: string;
   images: string[]; // Cloudinary URLs
 
-  // Status (7 states)
-  status: 'pending' | 'ai_verified' | 'approved' | 'resolved' | 'verified' | 'disputed' | 'rejected';
+  // Status (8 states)
+  status: 'pending' | 'ai_verified' | 'approved' | 'resolved' | 'verified' | 'disputed' | 'rejected' | 'review';
 
   // AI Verification (3 models)
   aiVerification: {
@@ -110,7 +110,7 @@ const reportSchema = new Schema<IReport>({
   // Status
   status: {
     type: String,
-    enum: ['pending', 'ai_verified', 'approved', 'resolved', 'verified', 'disputed', 'rejected'],
+    enum: ['pending', 'ai_verified', 'approved', 'resolved', 'verified', 'disputed', 'rejected', 'review'],
     default: 'pending',
   },
 

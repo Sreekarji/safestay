@@ -1,7 +1,7 @@
 import React from 'react';
 import { ImageGallery } from './ImageGallery';
 import UpvoteButton from './UpvoteButton';
-import { FiEdit2, FiTrash2, FiAlertTriangle, FiCheckCircle, FiClock, FiTool, FiCheck, FiArrowRight } from 'react-icons/fi';
+import { FiEdit2, FiTrash2, FiAlertTriangle, FiCheckCircle, FiClock, FiTool, FiCheck, FiArrowRight, FiX } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 
 interface Image {
@@ -62,6 +62,24 @@ const ReportCard: React.FC<ReportCardProps> = ({ report, onEdit, onDelete, onVer
         return (
           <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center gap-1">
             <FiClock className="text-xs" /> Under Review
+          </span>
+        );
+      case 'review':
+        return (
+          <span className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center gap-1">
+            <FiClock className="text-xs" /> Awaiting Admin Review
+          </span>
+        );
+      case 'ai_verified':
+        return (
+          <span className="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center gap-1">
+            <FiCheckCircle className="text-xs" /> AI Verified
+          </span>
+        );
+      case 'rejected':
+        return (
+          <span className="bg-red-100 text-red-700 px-3 py-1 rounded-full text-sm font-semibold inline-flex items-center gap-1">
+            <FiX className="text-xs" /> Rejected
           </span>
         );
       case 'approved':

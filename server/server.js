@@ -335,19 +335,23 @@ app.post('/api/reports', authMiddleware, async (req, res) => {
     // ========================================
     // STEP 2: VALIDATE REQUEST DATA
     // ========================================
-    const { accommodation, accommodationName, issueType, description, images } = req.body;
+    // Accept both old field names (accommodation, accommodationName, issueType)
+    // and new client field names (accommodationId, category)
+    const { accommodation: accOld, accommodationName, accommodationId: accIdFromClient, category, issueType: issueTypeOld, description, images, severity } = req.body;
+    const accommodation = accOld || accIdFromClient;
+    const issueType = issueTypeOld || category;
 
     if (!accommodation && (!accommodationName || !accommodationName.trim())) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Please select or enter an accommodation name' 
+      return res.status(400).json({
+        success: false,
+        message: 'Please select or enter an accommodation name'
       });
     }
 
     if (!issueType || !issueType.trim()) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Issue type is required' 
+      return res.status(400).json({
+        success: false,
+        message: 'Issue type is required'
       });
     }
 

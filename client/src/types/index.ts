@@ -41,7 +41,7 @@ export type ReportCategory =
   | 'food_safety'
   | 'other';
 
-export type ReportStatus = 'pending' | 'verified' | 'disputed' | 'resolved' | 'ai_verified' | 'approved' | 'rejected';
+export type ReportStatus = 'pending' | 'verified' | 'disputed' | 'resolved' | 'ai_verified' | 'approved' | 'rejected' | 'review';
 
 export interface Report {
   _id: string;

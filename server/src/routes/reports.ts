@@ -12,43 +12,43 @@ const router = Router();
 // ========================
 // AI Auto-Disposition Thresholds
 // ========================
-// Three-tier system: auto-reject, admin review, auto-approve
+// Confidence-based three-tier system: auto-reject, admin review, auto-verify
 const AI_THRESHOLDS = {
-  /** Consensus 'reject' with confidence >= this → auto-reject (clearly fake/spam) */
+  /** Confidence below this → auto-reject (clearly fake/spam) */
   AUTO_REJECT_CONFIDENCE: 0.6,
-  /** Consensus 'accept' with confidence >= this → auto-approve (clearly legitimate) */
-  AUTO_APPROVE_CONFIDENCE: 0.8,
+  /** Confidence at or above this → auto-verify (clearly legitimate) */
+  AUTO_VERIFY_CONFIDENCE: 0.9,
 } as const;
 
 /**
- * Determine report status based on AI verification results.
+ * Determine report status based on AI overall confidence score.
  *
- * Three-tier disposition:
- *   - reject  + confidence >= 0.6  → 'rejected'   (auto-reject, clearly fake)
- *   - accept  + confidence >= 0.8  → 'ai_verified' (auto-approve, clearly legitimate)
- *   - everything else              → 'pending'     (admin review needed)
+ * Three-tier disposition (based on overallConfidence):
+ *   - confidence < 0.6   → 'rejected'    (auto-reject, clearly fake)
+ *   - confidence 0.6-0.9 → 'review'      (admin review needed)
+ *   - confidence > 0.9   → 'ai_verified' (auto-verify, clearly legitimate)
  */
 function getAIDisposition(
   consensus: 'accept' | 'reject' | 'pending',
   overallConfidence: number
 ): { status: IReport['status']; reason: string } {
-  if (consensus === 'reject' && overallConfidence >= AI_THRESHOLDS.AUTO_REJECT_CONFIDENCE) {
+  if (overallConfidence < AI_THRESHOLDS.AUTO_REJECT_CONFIDENCE) {
     return {
       status: 'rejected',
-      reason: `Auto-rejected: AI consensus reject with ${(overallConfidence * 100).toFixed(0)}% confidence`,
+      reason: `Auto-rejected: AI confidence ${(overallConfidence * 100).toFixed(0)}% is below ${(AI_THRESHOLDS.AUTO_REJECT_CONFIDENCE * 100).toFixed(0)}% threshold`,
     };
   }
 
-  if (consensus === 'accept' && overallConfidence >= AI_THRESHOLDS.AUTO_APPROVE_CONFIDENCE) {
+  if (overallConfidence > AI_THRESHOLDS.AUTO_VERIFY_CONFIDENCE) {
     return {
       status: 'ai_verified',
-      reason: `Auto-approved: AI consensus accept with ${(overallConfidence * 100).toFixed(0)}% confidence`,
+      reason: `Auto-verified: AI confidence ${(overallConfidence * 100).toFixed(0)}% exceeds ${(AI_THRESHOLDS.AUTO_VERIFY_CONFIDENCE * 100).toFixed(0)}% threshold`,
     };
   }
 
   return {
-    status: 'pending',
-    reason: `Needs admin review: consensus=${consensus}, confidence=${(overallConfidence * 100).toFixed(0)}%`,
+    status: 'review',
+    reason: `Needs admin review: AI confidence ${(overallConfidence * 100).toFixed(0)}% is between ${(AI_THRESHOLDS.AUTO_REJECT_CONFIDENCE * 100).toFixed(0)}% and ${(AI_THRESHOLDS.AUTO_VERIFY_CONFIDENCE * 100).toFixed(0)}%`,
   };
 }
 

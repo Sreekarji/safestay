@@ -214,9 +214,12 @@ export default function MyReports() {
   // ✅ FIXED: Filter with search functionality
   const filteredReports = reports.filter(r => {
     // Status filter
-    const statusMatch = 
+    const statusMatch =
       activeFilter === 'all' ? true :
       activeFilter === 'pending' ? r.status === 'pending' :
+      activeFilter === 'review' ? r.status === 'review' :
+      activeFilter === 'ai_verified' ? r.status === 'ai_verified' :
+      activeFilter === 'rejected' ? r.status === 'rejected' :
       activeFilter === 'approved' ? r.status === 'approved' :
       activeFilter === 'resolved' ? r.status === 'resolved' :
       activeFilter === 'verified' ? r.status === 'verified' :
@@ -235,6 +238,9 @@ export default function MyReports() {
   const stats = [
     { label: 'Total Contributions', value: reports.length, icon: <FiFileText />, color: 'text-blue-600', bg: 'bg-blue-50' },
     { label: 'Pending Review', value: reports.filter(r => r.status === 'pending').length, icon: <FiClock />, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    { label: 'Admin Review', value: reports.filter(r => r.status === 'review').length, icon: <FiClock />, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { label: 'AI Verified', value: reports.filter(r => r.status === 'ai_verified').length, icon: <FiCheckCircle />, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Rejected', value: reports.filter(r => r.status === 'rejected').length, icon: <FiX />, color: 'text-red-600', bg: 'bg-red-50' },
     { label: 'Owner Responded', value: reports.filter(r => r.status === 'resolved').length, icon: <FiTool />, color: 'text-purple-600', bg: 'bg-purple-50' },
     { label: 'Issues Verified', value: reports.filter(r => r.status === 'verified').length, icon: <FiCheckCircle />, color: 'text-green-600', bg: 'bg-green-50' },
   ];
@@ -326,6 +332,9 @@ export default function MyReports() {
               {[
                 { id: 'all', label: 'All Reports' },
                 { id: 'pending', label: '⏳ Pending' },
+                { id: 'review', label: '🔍 Admin Review' },
+                { id: 'ai_verified', label: '🤖 AI Verified' },
+                { id: 'rejected', label: '❌ Rejected' },
                 { id: 'approved', label: '✅ Published' },
                 { id: 'resolved', label: '🔧 Resolved' },
                 { id: 'verified', label: '🎉 Verified' },
