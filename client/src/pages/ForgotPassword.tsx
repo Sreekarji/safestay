@@ -18,8 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { authService } from '@/services/authService';
 
 // ── Schemas per step ──────────────────────────────────────────────────
 
@@ -87,13 +86,7 @@ export default function ForgotPassword() {
     setError(null);
     setSuccessMessage(null);
     try {
-      const res = await fetch(`${API}/api/otp/send-reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.email }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.message || 'Failed to send OTP');
+      await authService.forgotPassword(data.email);
       setEmail(data.email);
       setSuccessMessage('OTP sent! Check your inbox.');
       setStep(2);
@@ -111,13 +104,7 @@ export default function ForgotPassword() {
     setError(null);
     setSuccessMessage(null);
     try {
-      const res = await fetch(`${API}/api/otp/verify-reset`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp: data.otp }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.message || 'Invalid OTP');
+      await authService.verifyResetOTP(email, data.otp);
       setOtp(data.otp);
       setStep(3);
     } catch (err: any) {
@@ -134,13 +121,7 @@ export default function ForgotPassword() {
     setError(null);
     setSuccessMessage(null);
     try {
-      const res = await fetch(`${API}/api/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp, newPassword: data.newPassword }),
-      });
-      const body = await res.json();
-      if (!res.ok) throw new Error(body.message || 'Failed to reset password');
+      await authService.resetPassword(email, otp, data.newPassword);
       setComplete(true);
     } catch (err: any) {
       setError(err.message || 'Password reset failed');

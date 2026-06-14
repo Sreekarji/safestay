@@ -315,14 +315,6 @@ function generateMockTrend(): SSITrend[] {
   return trend;
 }
 
-export function getRouteMetrics() {
-  return {
-    avgRouteSSI: 76,
-    safestRoute: 'Sunshine Ladies PG → IIIT Hyderabad (88)',
-    highestRiskZone: 'Dilshuknagar corridor',
-    recentAlerts: 4,
-  };
-}
 
 function generateMockRecentReports(): RecentReport[] {
   const areas = ['Madhapur', 'Kondapur', 'Gachibowli', 'Kukatpally', 'Ameerpet'];

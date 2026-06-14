@@ -33,6 +33,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollReveal, FadeIn } from '@/components/ParallaxEffect';
 import { useAuthStore } from '@/stores/authStore';
 import { cn } from '@/lib/utils';
+import { useTranslation } from 'react-i18next';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -102,6 +103,7 @@ function MapClickHandler({ onLocationSelect }: MapClickHandlerProps) {
 
 export default function AddProperty() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [searchParams] = useSearchParams();
   const { token } = useAuthStore();
   const editId = searchParams.get('edit');
@@ -162,7 +164,7 @@ export default function AddProperty() {
           setMarkerPosition([prop.location.coordinates[1], prop.location.coordinates[0]]);
         }
       })
-      .catch(() => toast.error('Failed to load property data'))
+      .catch(() => toast.error(t('owner.addProperty.failedToLoad')))
       .finally(() => setLoadingProperty(false));
   }, [editId, token, reset]);
 
@@ -183,7 +185,7 @@ export default function AddProperty() {
 
   const onSubmit = async (data: PropertyFormData) => {
     if (!markerPosition) {
-      toast.error('Please click on the map to set the property location');
+      toast.error(t('owner.addProperty.locationRequired'));
       return;
     }
 
@@ -218,10 +220,10 @@ export default function AddProperty() {
         throw new Error(errBody.message || 'Failed to save property');
       }
 
-      toast.success(isEditMode ? 'Property updated successfully' : 'Property created successfully');
+      toast.success(isEditMode ? t('owner.addProperty.propertyUpdated') : t('owner.addProperty.propertyCreated'));
       navigate('/owner/dashboard');
     } catch (err: any) {
-      toast.error(err.message || 'Something went wrong');
+      toast.error(err.message || 'Something went wrong'); // fallback not in i18n
     } finally {
       setSubmitting(false);
     }
@@ -233,7 +235,7 @@ export default function AddProperty() {
       <div className="p-6 lg:p-8 max-w-3xl mx-auto">
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary-600" />
-          <span className="ml-3 text-slate-500">Loading property...</span>
+          <span className="ml-3 text-slate-500">{t('owner.addProperty.loadingProperty')}</span>
         </div>
       </div>
     );
@@ -252,15 +254,15 @@ export default function AddProperty() {
           className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-primary-600 transition-colors mb-4"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
+          {t('owner.addProperty.backToDashboard')}
         </button>
         <h1 className="text-2xl font-bold text-slate-900">
-          {isEditMode ? 'Edit Property' : 'Add New Property'}
+          {isEditMode ? t('owner.addProperty.editProperty') : t('owner.addProperty.addNewProperty')}
         </h1>
         <p className="text-slate-500 mt-1">
           {isEditMode
-            ? 'Update your property details below'
-            : 'List your accommodation on SafeStay and reach verified students'}
+            ? t('owner.addProperty.editSubtitle')
+            : t('owner.addProperty.addSubtitle')}
         </p>
       </motion.div>
 
@@ -270,16 +272,16 @@ export default function AddProperty() {
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-5">
               <Building2 className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Basic Information</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.basicInfo')}</h2>
             </div>
             <div className="space-y-5">
               {/* Property Name */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Property Name
+                  {t('owner.addProperty.propertyName')}
                 </label>
                 <Input
-                  placeholder="e.g. Sunshine Hostels, Green PG"
+                  placeholder={t('owner.addProperty.propertyNamePlaceholder')}
                   {...register('name')}
                 />
                 {errors.name && (
@@ -290,7 +292,7 @@ export default function AddProperty() {
               {/* Property Type */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Property Type
+                  {t('owner.addProperty.propertyType')}
                 </label>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
                   {PROPERTY_TYPES.map((pt) => (
@@ -317,12 +319,12 @@ export default function AddProperty() {
               {/* Description */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Description
+                  {t('owner.addProperty.description')}
                 </label>
                 <textarea
                   {...register('description')}
                   rows={4}
-                  placeholder="Describe your property -- amenities, rules, nearby landmarks..."
+                  placeholder={t('owner.addProperty.descriptionPlaceholder')}
                   className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 resize-none"
                 />
                 {errors.description && (
@@ -338,16 +340,16 @@ export default function AddProperty() {
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-5">
               <MapPin className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Location</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.location')}</h2>
             </div>
             <div className="space-y-5">
               {/* Address */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Street Address
+                  {t('owner.addProperty.streetAddress')}
                 </label>
                 <Input
-                  placeholder="Full street address"
+                  placeholder={t('owner.addProperty.streetAddressPlaceholder')}
                   {...register('address')}
                 />
                 {errors.address && (
@@ -359,10 +361,10 @@ export default function AddProperty() {
                 {/* City */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    City
+                    {t('owner.addProperty.city')}
                   </label>
                   <Input
-                    placeholder="e.g. Hyderabad"
+                    placeholder={t('owner.addProperty.cityPlaceholder')}
                     {...register('city')}
                   />
                   {errors.city && (
@@ -373,10 +375,10 @@ export default function AddProperty() {
                 {/* Area */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Area / Locality
+                    {t('owner.addProperty.areaLocality')}
                   </label>
                   <Input
-                    placeholder="e.g. Madhapur, Kondapur"
+                    placeholder={t('owner.addProperty.areaPlaceholder')}
                     {...register('area')}
                   />
                   {errors.area && (
@@ -388,10 +390,10 @@ export default function AddProperty() {
               {/* Map Picker */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Pin Location on Map
+                  {t('owner.addProperty.pinLocation')}
                 </label>
                 <p className="text-xs text-slate-400 mb-2">
-                  Click on the map to set the exact location of your property
+                  {t('owner.addProperty.pinLocationHint')}
                 </p>
                 <div className="rounded-xl overflow-hidden border border-slate-200" style={{ height: 320 }}>
                   <MapContainer
@@ -414,7 +416,7 @@ export default function AddProperty() {
                   <div className="flex items-center gap-2 mt-2 text-xs text-slate-500">
                     <CheckCircle className="h-3.5 w-3.5 text-emerald-500" />
                     <span>
-                      Location set: {markerPosition[0].toFixed(5)}, {markerPosition[1].toFixed(5)}
+                      {t('owner.addProperty.locationSet', { lat: markerPosition[0].toFixed(5), lng: markerPosition[1].toFixed(5) })}
                     </span>
                   </div>
                 )}
@@ -428,19 +430,19 @@ export default function AddProperty() {
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-5">
               <Phone className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Contact & Pricing</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.contactPricing')}</h2>
             </div>
             <div className="space-y-5">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 {/* Contact Phone */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Contact Phone
+                    {t('owner.addProperty.contactPhone')}
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
-                      placeholder="10-digit phone number"
+                      placeholder={t('owner.addProperty.phonePlaceholder')}
                       className="pl-10"
                       {...register('contactPhone')}
                     />
@@ -453,12 +455,12 @@ export default function AddProperty() {
                 {/* Monthly Rent */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    Monthly Rent (INR)
+                    {t('owner.addProperty.monthlyRent')}
                   </label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <Input
-                      placeholder="e.g. 8000"
+                      placeholder={t('owner.addProperty.rentPlaceholder')}
                       className="pl-10"
                       type="number"
                       min={0}
@@ -479,10 +481,10 @@ export default function AddProperty() {
           <Card className="p-6">
             <div className="flex items-center gap-2 mb-5">
               <FileText className="h-5 w-5 text-primary-600" />
-              <h2 className="text-lg font-semibold text-slate-900">Room Types</h2>
+              <h2 className="text-lg font-semibold text-slate-900">{t('owner.addProperty.roomTypes')}</h2>
             </div>
             <p className="text-xs text-slate-400 mb-3">
-              Select all room types available at your property
+              {t('owner.addProperty.roomTypesHint')}
             </p>
             <div className="flex flex-wrap gap-2">
               {ROOM_TYPE_OPTIONS.map((rt) => {
@@ -541,18 +543,18 @@ export default function AddProperty() {
               disabled={submitting}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </Button>
             <Button type="submit" disabled={submitting} className="min-w-[160px]">
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {isEditMode ? 'Updating...' : 'Creating...'}
+                  {isEditMode ? t('owner.addProperty.submitting') : t('owner.addProperty.submitting')}
                 </>
               ) : (
                 <>
                   <Save className="mr-2 h-4 w-4" />
-                  {isEditMode ? 'Update Property' : 'Create Property'}
+                  {isEditMode ? t('owner.addProperty.update') : t('owner.addProperty.save')}
                 </>
               )}
             </Button>

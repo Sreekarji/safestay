@@ -8,8 +8,10 @@ import { loginSchema, type LoginFormData } from '@/lib/validations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
+import { useTranslation } from 'react-i18next';
 
 export function OwnerLogin() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { login, clearError, loading } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
@@ -35,10 +37,10 @@ export function OwnerLogin() {
   };
 
   const benefits = [
-    { icon: Building2, text: 'Manage Properties', desc: 'View and update your property listings from one dashboard.' },
-    { icon: Shield, text: 'Build Trust', desc: 'Respond to reviews and earn a verified safety badge.' },
-    { icon: ArrowRight, text: 'Attract Tenants', desc: 'Stand out with a transparent, trusted owner profile.' },
-    { icon: Mail, text: 'Direct Communication', desc: 'Connect with students and address concerns in real time.' },
+    { icon: Building2, text: t('owner.login.manageProperties'), desc: t('owner.login.managePropertiesDesc') },
+    { icon: Shield, text: t('owner.login.buildTrust'), desc: t('owner.login.buildTrustDesc') },
+    { icon: ArrowRight, text: t('owner.login.attractTenants'), desc: t('owner.login.attractTenantsDesc') },
+    { icon: Mail, text: t('owner.login.directComm'), desc: t('owner.login.directCommDesc') },
   ];
 
   return (
@@ -51,10 +53,10 @@ export function OwnerLogin() {
             <span className="text-2xl font-bold">SafeStay</span>
           </div>
           <h2 className="text-3xl font-extrabold leading-tight mb-4">
-            Welcome Back, <span className="text-green-400">Owner.</span>
+            {t('owner.login.welcomeBack', { role: t('owner.login.owner') })}
           </h2>
           <p className="text-slate-400 mb-8">
-            Manage your properties and build tenant trust.
+            {t('owner.login.subtitle')}
           </p>
           <div className="space-y-6">
             {benefits.map((b, i) => (
@@ -87,10 +89,10 @@ export function OwnerLogin() {
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <h1 className="text-2xl font-bold text-slate-900 text-center mb-1">
-              Owner Sign In
+              {t('owner.login.title')}
             </h1>
             <p className="text-sm text-slate-500 text-center mb-6">
-              Access your property dashboard
+              {t('owner.login.subtitleForm')}
             </p>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -103,7 +105,7 @@ export function OwnerLogin() {
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Email
+                  {t('auth.email')}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -122,7 +124,7 @@ export function OwnerLogin() {
               {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  Password
+                  {t('auth.password')}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -158,21 +160,21 @@ export function OwnerLogin() {
                 {loading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
+                    {t('owner.login.signingIn')}
                   </>
                 ) : (
-                  'Sign In'
+                  <>{t('owner.login.signIn')}</>
                 )}
               </Button>
             </form>
 
             <p className="mt-6 text-center text-sm text-slate-500">
-              Don't have an account?{' '}
+              {t('owner.login.noAccount')}{' '}
               <Link
                 to="/owner/register"
                 className="text-green-600 hover:text-green-700 font-medium"
               >
-                Register as Owner
+                {t('owner.login.registerAsOwner')}
               </Link>
             </p>
             <p className="mt-2 text-center text-sm text-slate-500">
@@ -180,7 +182,7 @@ export function OwnerLogin() {
                 to="/login"
                 className="text-primary-600 hover:text-primary-700 font-medium"
               >
-                Sign in as Student
+                {t('owner.login.signInAsStudent')}
               </Link>
             </p>
           </div>

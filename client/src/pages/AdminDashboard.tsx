@@ -17,11 +17,13 @@ import {
   ArrowRight,
   Brain,
   Activity,
+  Download,
 } from 'lucide-react';
 import { ScrollReveal, StaggerReveal, FadeIn } from '@/components/ParallaxEffect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatRelativeTime, getStatusColor } from '@/lib/utils';
+import toast from 'react-hot-toast';
 import { useAuthStore } from '@/stores/authStore';
 import type { Report, Accommodation, User } from '@/types';
 
@@ -190,6 +192,32 @@ export function AdminDashboard() {
   });
 
   const pendingReportsCount = reports.filter((r) => r.status === 'pending').length;
+
+  // CSV export for filtered reports
+  function handleExportCSV() {
+    if (filteredReports.length === 0) {
+      toast.error('No reports to export');
+      return;
+    }
+    const headers = ['Title', 'Description', 'Category', 'Severity', 'Status', 'Created At'];
+    const rows = filteredReports.map((r) => [
+      `"${(r.title || '').replace(/"/g, '""')}"`,
+      `"${(r.description || '').replace(/"/g, '""')}"`,
+      r.category,
+      String(r.severity),
+      r.status,
+      r.createdAt,
+    ]);
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `admin-reports-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`Exported ${filteredReports.length} reports`);
+  }
 
   const statCards = [
     {
@@ -401,6 +429,15 @@ export function AdminDashboard() {
                         <option value="disputed">Disputed</option>
                       </select>
                     </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-9 text-xs border-slate-200"
+                      onClick={handleExportCSV}
+                    >
+                      <Download className="h-3.5 w-3.5 mr-1.5" />
+                      Export CSV
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">

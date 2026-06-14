@@ -4,22 +4,22 @@ import { motion } from 'framer-motion';
 import { Shield, CheckCircle, Building2, Users, Star } from 'lucide-react';
 import { OwnerRegisterForm } from '@/components/auth/OwnerRegisterForm';
 import { useAuthStore } from '@/stores/authStore';
-import { API_URL } from '@/lib/constants';
+import { authService } from '@/services/authService';
 import type { OwnerRegisterFormData } from '@/lib/validations';
-
-const API = API_URL;
+import { useTranslation } from 'react-i18next';
 
 export function OwnerRegister() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { error, clearError } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const benefits = [
-    { icon: CheckCircle, text: 'Public Accountability', desc: 'Respond to student concerns publicly and show your commitment.' },
-    { icon: Star, text: 'Boost Your Rating', desc: 'Resolve issues quickly to improve your property\'s safety score.' },
-    { icon: Building2, text: 'Competitive Edge', desc: 'Stand out from unverified competitors with a verified profile.' },
-    { icon: Users, text: 'Quality Tenants', desc: 'Attract safety-conscious tenants who value transparency.' },
+    { icon: CheckCircle, text: t('owner.register.publicAccountability'), desc: t('owner.register.publicAccountabilityDesc') },
+    { icon: Star, text: t('owner.register.boostRating'), desc: t('owner.register.boostRatingDesc') },
+    { icon: Building2, text: t('owner.register.competitiveEdge'), desc: t('owner.register.competitiveEdgeDesc') },
+    { icon: Users, text: t('owner.register.qualityTenants'), desc: t('owner.register.qualityTenantsDesc') },
   ];
 
   const handleSubmit = async (data: OwnerRegisterFormData & { step: number; documents?: { governmentId: File | null; propertyProof: File | null; businessRegistration: File | null } }) => {
@@ -40,21 +40,13 @@ export function OwnerRegister() {
         if (data.documents.businessRegistration) formData.append('businessRegistration', data.documents.businessRegistration);
       }
 
-      const res = await fetch(`${API}/api/auth/register-owner`, {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || result.message || 'Registration failed');
-      }
+      const result = await authService.registerOwner(formData);
 
       // Store token and user
-      if (result.data?.token) {
-        useAuthStore.getState().setToken(result.data.token);
-        useAuthStore.getState().setUser(result.data.user);
+      const payload = result.data || result;
+      if (payload.token) {
+        useAuthStore.getState().setToken(payload.token);
+        useAuthStore.getState().setUser(payload.user);
       }
 
       setSubmitted(true);
@@ -73,15 +65,15 @@ export function OwnerRegister() {
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 mb-2">Registration Submitted!</h1>
+            <h1 className="text-2xl font-bold text-slate-900 mb-2">{t('owner.register.submitted')}</h1>
             <p className="text-slate-500 mb-6">
-              Your owner account is under review. We'll verify your documents and email you within 24-48 hours.
+              {t('owner.register.submittedDesc')}
             </p>
             <Link
               to="/login"
               className="inline-flex items-center justify-center w-full rounded-lg bg-primary-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 transition-colors"
             >
-              Go to Sign In
+              {t('owner.register.goToSignIn')}
             </Link>
           </div>
         </motion.div>
@@ -99,7 +91,7 @@ export function OwnerRegister() {
             <span className="text-2xl font-bold">SafeStay</span>
           </div>
           <h2 className="text-3xl font-extrabold leading-tight mb-4">
-            Start Building <span className="text-primary-400">Tenant Trust.</span>
+            {t('owner.register.startBuilding')} <span className="text-primary-400">{t('owner.register.tenantTrust')}</span>
           </h2>
           <div className="space-y-6 mt-8">
             {benefits.map((b, i) => (
@@ -127,14 +119,14 @@ export function OwnerRegister() {
           </div>
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            <h1 className="text-2xl font-bold text-slate-900 text-center mb-1">Register Your Property</h1>
-            <p className="text-sm text-slate-500 text-center mb-6">Join the growing platform for student safety</p>
+            <h1 className="text-2xl font-bold text-slate-900 text-center mb-1">{t('owner.register.title')}</h1>
+            <p className="text-sm text-slate-500 text-center mb-6">{t('owner.register.subtitle')}</p>
 
             <OwnerRegisterForm onSubmit={handleSubmit} error={localError || error} />
 
             <p className="mt-6 text-center text-sm text-slate-500">
-              Already have an account?{' '}
-              <Link to="/login" className="text-primary-600 font-medium">Sign in</Link>
+              {t('owner.register.hasAccount')}{' '}
+              <Link to="/login" className="text-primary-600 font-medium">{t('owner.register.signIn')}</Link>
             </p>
           </div>
         </motion.div>

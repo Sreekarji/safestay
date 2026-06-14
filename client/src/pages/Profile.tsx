@@ -26,8 +26,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuthStore } from '@/stores/authStore';
 import type { User as UserType } from '@/types';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import api from '@/services/api';
+import { authService } from '@/services/authService';
 
 // --- Schemas ---
 
@@ -145,10 +145,8 @@ const Profile: React.FC = () => {
     const fetchStats = async () => {
       if (!token) return;
       try {
-        const res = await fetch(`${API}/api/reports/my`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await res.json();
+        const res = await api.get('/reports/my');
+        const data = res.data;
         const reportsList = data.data || data;
         const reports = Array.isArray(reportsList) ? reportsList.length : 0;
         const upvotes = Array.isArray(reportsList)
@@ -184,17 +182,7 @@ const Profile: React.FC = () => {
   const onProfileSave = async (data: ProfileFormData) => {
     setSavingProfile(true);
     try {
-      const res = await fetch(`${API}/api/auth/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.message || 'Failed to update profile');
+      const result = await authService.updateProfile(data);
 
       const updatedUser =
         result.data?.user || result.user || result.data || { ...user, ...data };
@@ -225,20 +213,10 @@ const Profile: React.FC = () => {
   const onPasswordSave = async (data: PasswordFormData) => {
     setSavingPassword(true);
     try {
-      const res = await fetch(`${API}/api/auth/change-password`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          currentPassword: data.currentPassword,
-          newPassword: data.newPassword,
-        }),
+      await authService.changePassword({
+        currentPassword: data.currentPassword,
+        newPassword: data.newPassword,
       });
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.message || 'Failed to change password');
 
       resetPassword();
       setToast({ message: 'Password changed successfully', type: 'success' });
@@ -269,14 +247,7 @@ const Profile: React.FC = () => {
       const formData = new FormData();
       formData.append('photo', file);
 
-      const res = await fetch(`${API}/api/auth/profile-photo`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
-      const result = await res.json();
-      if (!res.ok)
-        throw new Error(result.message || 'Failed to upload photo');
+      const result = await authService.uploadProfilePhoto(formData);
 
       const photoUrl =
         result.data?.profilePhoto ||

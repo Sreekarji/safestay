@@ -1,20 +1,40 @@
 import { useTranslation } from 'react-i18next';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Shield, PenLine, Brain, ShieldCheck, BarChart3, Globe, Volume2, MapPin, Zap, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import api from '@/services/api';
 
 const anim = { initial: { opacity: 0, y: 30 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5 } };
 
 export function Landing() {
   const { t } = useTranslation();
-  // TODO: Stats should be fetched from the API instead of hardcoded values
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [liveStats, setLiveStats] = useState<{ accommodations: number; reports: number; cities: number } | null>(null);
+
+  useEffect(() => {
+    api.get('/admin/stats')
+      .then((res) => {
+        const d = res.data?.data || res.data;
+        if (d) {
+          setLiveStats({
+            accommodations: d.totalAccommodations ?? d.accommodations ?? null,
+            reports: d.totalReports ?? d.reports ?? null,
+            cities: d.totalCities ?? d.cities ?? null,
+          });
+        }
+      })
+      .catch(() => { /* fall back to hardcoded */ })
+      .finally(() => setStatsLoading(false));
+  }, []);
+
   const stats = [
-    { value: '500+', label: t('landing.stat1') },
-    { value: '10K+', label: t('landing.stat2') },
+    { value: statsLoading ? '...' : liveStats?.accommodations ? `${liveStats.accommodations}+` : '500+', label: t('landing.stat1') },
+    { value: statsLoading ? '...' : liveStats?.reports ? `${(liveStats.reports / 1000).toFixed(0)}K+` : '10K+', label: t('landing.stat2') },
     { value: '3', label: t('landing.stat3') },
-    { value: '15+', label: t('landing.stat4') },
+    { value: statsLoading ? '...' : liveStats?.cities ? `${liveStats.cities}+` : '15+', label: t('landing.stat4') },
   ];
   const steps = [
     { num: 1, icon: PenLine, title: t('landing.step1Title'), desc: t('landing.step1Desc') },

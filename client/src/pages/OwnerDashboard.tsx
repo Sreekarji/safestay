@@ -24,6 +24,7 @@ import { formatRelativeTime, getStatusColor, getSSITailwind, getSSILabel } from 
 import { useAuthStore } from '@/stores/authStore';
 import type { Accommodation, Report } from '@/types';
 import toast from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -37,6 +38,7 @@ interface OwnerStats {
 export default function OwnerDashboard() {
   const { user } = useAuthStore();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const [properties, setProperties] = useState<Accommodation[]>([]);
   const [reports, setReports] = useState<Report[]>([]);
@@ -97,8 +99,8 @@ export default function OwnerDashboard() {
           resolvedIssues: resolved,
         });
       } catch (err) {
-        toast.error('Failed to load dashboard data. Please try again.');
-        setError('Failed to load dashboard data. Please try again.');
+        toast.error(t('owner.dashboard.failedToLoad'));
+        setError(t('owner.dashboard.failedToLoad'));
       } finally {
         setLoading(false);
       }
@@ -108,7 +110,7 @@ export default function OwnerDashboard() {
   }, []);
 
   const hour = new Date().getHours();
-  const greet = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const greet = hour < 12 ? t('owner.dashboard.goodMorning') : hour < 17 ? t('owner.dashboard.goodAfternoon') : t('owner.dashboard.goodEvening');
 
   const getPropertyForReport = (report: Report): Accommodation | undefined => {
     if (typeof report.accommodationId === 'object' && report.accommodationId !== null) {
@@ -154,13 +156,13 @@ export default function OwnerDashboard() {
               {greet}, {user?.name || 'Owner'}
             </h1>
             <p className="mt-2 text-blue-100 text-lg">
-              Manage your properties and respond to safety reports
+              {t('owner.dashboard.subtitle')}
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               <Link to="/owner/properties/new">
                 <Button className="bg-white text-blue-700 hover:bg-blue-50 font-semibold shadow-lg">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Property
+                  {t('owner.dashboard.addProperty')}
                 </Button>
               </Link>
               <Link to="/owner/reports">
@@ -169,7 +171,7 @@ export default function OwnerDashboard() {
                   className="border-white/30 text-white hover:bg-white/10 font-semibold"
                 >
                   <Eye className="h-4 w-4 mr-2" />
-                  View All Reports
+                  {t('owner.dashboard.viewAllReports')}
                 </Button>
               </Link>
             </div>
@@ -192,7 +194,7 @@ export default function OwnerDashboard() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">Total Properties</p>
+                  <p className="text-sm font-medium text-slate-500">{t('owner.dashboard.totalProperties')}</p>
                   <p className="text-2xl font-bold text-slate-900">{stats.totalProperties}</p>
                 </div>
                 <div className="rounded-xl bg-blue-100 p-3">
@@ -206,7 +208,7 @@ export default function OwnerDashboard() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">Total Reports</p>
+                  <p className="text-sm font-medium text-slate-500">{t('owner.dashboard.totalReports')}</p>
                   <p className="text-2xl font-bold text-slate-900">{stats.totalReports}</p>
                 </div>
                 <div className="rounded-xl bg-slate-100 p-3">
@@ -220,7 +222,7 @@ export default function OwnerDashboard() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">Pending Issues</p>
+                  <p className="text-sm font-medium text-slate-500">{t('owner.dashboard.pendingIssues')}</p>
                   <p className="text-2xl font-bold text-slate-900">{stats.pendingIssues}</p>
                 </div>
                 <div className="rounded-xl bg-amber-100 p-3">
@@ -234,7 +236,7 @@ export default function OwnerDashboard() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-slate-500">Resolved Issues</p>
+                  <p className="text-sm font-medium text-slate-500">{t('owner.dashboard.resolvedIssues')}</p>
                   <p className="text-2xl font-bold text-slate-900">{stats.resolvedIssues}</p>
                 </div>
                 <div className="rounded-xl bg-emerald-100 p-3">
@@ -249,12 +251,12 @@ export default function OwnerDashboard() {
       {/* Properties Grid */}
       <ScrollReveal>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Your Properties</h2>
+          <h2 className="text-xl font-bold text-slate-900">{t('owner.dashboard.yourProperties')}</h2>
           <Link
             to="/owner/properties"
             className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
           >
-            View all <ArrowRight className="h-3.5 w-3.5" />
+            {t('owner.dashboard.viewAll')} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -262,14 +264,14 @@ export default function OwnerDashboard() {
           <Card className="border-dashed border-2 border-slate-300">
             <CardContent className="p-10 text-center">
               <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500 text-lg font-medium">No properties yet</p>
+              <p className="text-slate-500 text-lg font-medium">{t('owner.dashboard.noProperties')}</p>
               <p className="text-slate-400 mt-1 mb-4">
-                Add your first property to start tracking safety scores
+                {t('owner.dashboard.noPropertiesDesc')}
               </p>
               <Link to="/owner/properties/new">
                 <Button className="bg-emerald-600 hover:bg-emerald-700">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Your First Property
+                  {t('owner.dashboard.addFirstProperty')}
                 </Button>
               </Link>
             </CardContent>
@@ -302,7 +304,7 @@ export default function OwnerDashboard() {
                     <div className="flex items-center gap-4 text-sm text-slate-500 mb-4">
                       <span className="flex items-center gap-1">
                         <FileText className="h-3.5 w-3.5" />
-                        {property.reportCount || 0} reports
+                        {t('owner.dashboard.reportsCount', { count: property.reportCount || 0 })}
                       </span>
                       <span
                         className={`text-xs font-medium px-2 py-0.5 rounded-full ${getSSITailwind(property.ssi)}`}
@@ -325,7 +327,7 @@ export default function OwnerDashboard() {
                         onClick={() => navigate(`/owner/properties/${property._id}`)}
                       >
                         <Eye className="h-3 w-3 mr-1" />
-                        View Details
+                        {t('owner.dashboard.viewDetails')}
                       </Button>
                       <Button
                         size="sm"
@@ -336,7 +338,7 @@ export default function OwnerDashboard() {
                         }
                       >
                         <MessageSquare className="h-3 w-3 mr-1" />
-                        Reports
+                        {t('owner.dashboard.reports')}
                       </Button>
                       <Button
                         size="sm"
@@ -347,7 +349,7 @@ export default function OwnerDashboard() {
                         }
                       >
                         <Wrench className="h-3 w-3 mr-1" />
-                        Manage
+                        {t('owner.dashboard.manage')}
                       </Button>
                     </div>
                   </CardContent>
@@ -361,12 +363,12 @@ export default function OwnerDashboard() {
       {/* Recent Reports */}
       <ScrollReveal>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-slate-900">Recent Reports</h2>
+          <h2 className="text-xl font-bold text-slate-900">{t('owner.dashboard.recentReports')}</h2>
           <Link
             to="/owner/reports"
             className="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-1"
           >
-            View all <ArrowRight className="h-3.5 w-3.5" />
+            {t('owner.dashboard.viewAll')} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -374,9 +376,9 @@ export default function OwnerDashboard() {
           <Card className="border-dashed border-2 border-slate-300">
             <CardContent className="p-10 text-center">
               <FileText className="h-12 w-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500 text-lg font-medium">No reports yet</p>
+              <p className="text-slate-500 text-lg font-medium">{t('owner.dashboard.noReports')}</p>
               <p className="text-slate-400 mt-1">
-                Safety reports submitted by tenants will appear here
+                {t('owner.dashboard.noReportsDesc')}
               </p>
             </CardContent>
           </Card>
@@ -412,7 +414,7 @@ export default function OwnerDashboard() {
                           {report.title}
                         </p>
                         <p className="text-xs text-slate-500 truncate">
-                          {property?.name || 'Unknown property'}
+                          {property?.name || t('owner.dashboard.unknownProperty')}
                           {' · '}
                           {report.category.replace(/_/g, ' ')}
                         </p>
@@ -447,30 +449,33 @@ export default function OwnerDashboard() {
               <TrendingUp className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-semibold text-slate-900">Safety Overview</h3>
+              <h3 className="font-semibold text-slate-900">{t('owner.dashboard.safetyOverview')}</h3>
               <p className="text-sm text-slate-600 mt-1">
                 {stats.totalProperties > 0 ? (
                   <>
-                    You manage {stats.totalProperties}{' '}
-                    {stats.totalProperties === 1 ? 'property' : 'properties'} with{' '}
-                    {stats.totalReports} total{' '}
-                    {stats.totalReports === 1 ? 'report' : 'reports'}.{' '}
+                    {t('owner.dashboard.manageSummary', {
+                      count: stats.totalProperties,
+                      type: stats.totalProperties === 1 ? t('owner.dashboard.property') : t('owner.dashboard.properties'),
+                      reports: stats.totalReports,
+                      reportWord: stats.totalReports === 1 ? 'report' : 'reports',
+                    })}{' '}
                     {stats.pendingIssues > 0 ? (
                       <>
                         <span className="text-amber-600 font-medium">
-                          {stats.pendingIssues} pending{' '}
-                          {stats.pendingIssues === 1 ? 'issue' : 'issues'}
-                        </span>{' '}
-                        require your attention.
+                            {t('owner.dashboard.pendingAttention', {
+                              count: stats.pendingIssues,
+                              type: stats.pendingIssues === 1 ? t('owner.dashboard.issue') : t('owner.dashboard.issues'),
+                            })}
+                        </span>
                       </>
                     ) : (
                       <span className="text-emerald-600 font-medium">
-                        All issues have been resolved.
+                        {t('owner.dashboard.allResolved')}
                       </span>
                     )}
                   </>
                 ) : (
-                  'Get started by adding your first property to begin tracking safety scores.'
+                  t('owner.dashboard.getStartedDesc')
                 )}
               </p>
             </div>

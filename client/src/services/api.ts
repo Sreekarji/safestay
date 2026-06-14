@@ -24,48 +24,8 @@ api.interceptors.response.use((response: any) => response, (error: any) => {
 export default api;
 
 // Helper: unwrap backend { success, data } responses
-function unwrap(res: any) {
+export function unwrap(res: any) {
   const body = res.data;
   if (body && body.success !== undefined && body.data !== undefined) return body.data;
   return body;
-}
-
-// Map fetch function
-export async function fetchMapMarkersWithHistory() {
-  const data = await unwrap(await api.get('/accommodations/with-location'));
-  return Array.isArray(data) ? data : [];
-}
-
-// Dashboard fetch functions
-export async function fetchDashboardStats() {
-  return await unwrap(await api.get('/admin/stats'));
-}
-
-export async function fetchSSITrend() {
-  try {
-    return await unwrap(await api.get('/analytics/dashboard'));
-  } catch {
-    return { trend: [] };
-  }
-}
-
-export async function fetchAreaRisks() {
-  try {
-    return await unwrap(await api.get('/analytics/area-risk'));
-  } catch {
-    return [];
-  }
-}
-
-export async function fetchCategoryBreakdown() {
-  try {
-    return await unwrap(await api.get('/analytics/dashboard'));
-  } catch {
-    return { categoryBreakdown: [] };
-  }
-}
-
-export async function fetchRecentReports() {
-  const data = await unwrap(await api.get('/reports?limit=10'));
-  return data?.reports || data || [];
 }

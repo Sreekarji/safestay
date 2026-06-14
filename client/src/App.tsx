@@ -9,6 +9,8 @@ import { Register } from '@/pages/Register';
 import { OwnerRegister } from '@/pages/OwnerRegister';
 import { OTPVerificationPage } from '@/pages/OTPVerification';
 import ForgotPassword from '@/pages/ForgotPassword';
+import { VerifyEmail } from '@/pages/VerifyEmail';
+import ReportIncident from '@/pages/ReportIncident';
 import { Dashboard } from '@/pages/Dashboard';
 import { ReportSubmit } from '@/pages/ReportSubmit';
 import { ReportDetail } from '@/pages/ReportDetail';
@@ -38,7 +40,7 @@ export default function App() {
 
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   return (
       <ErrorBoundary>
@@ -51,6 +53,7 @@ export default function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/verify-otp" element={<OTPVerificationPage />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/accommodations" element={<AccommodationList />} />
             <Route path="/accommodations/:id" element={<AccommodationDetail />} />
             <Route path="/map" element={<MapView />} />
@@ -65,6 +68,7 @@ export default function App() {
             {/* Student (Protected) */}
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/report/new" element={<ProtectedRoute><ReportSubmit /></ProtectedRoute>} />
+            <Route path="/report-incident" element={<ProtectedRoute><ReportIncident /></ProtectedRoute>} />
             <Route path="/report/:id" element={<ProtectedRoute><ReportDetail /></ProtectedRoute>} />
             <Route path="/my-reports" element={<ProtectedRoute><MyReports /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

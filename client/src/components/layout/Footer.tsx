@@ -26,7 +26,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/reports/new" className="text-slate-400 hover:text-white transition-colors">
+                <Link to="/report/new" className="text-slate-400 hover:text-white transition-colors">
                   {t('nav.submitReport')}
                 </Link>
               </li>
