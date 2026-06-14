@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import type { MapMarkerWithHistory } from '../../types';
@@ -7,8 +7,8 @@ import { fetchMapMarkersWithHistory, generateAISummary } from '../../services/ma
 import { getRouteIntelligence, getRouteComparison } from '../../services/routeData';
 import MarkerPopup from './MarkerPopup';
 import RouteOverlay from './RouteOverlay';
+import { DEFAULT_MAP_CENTER } from '../../lib/constants';
 
-const HYDERABAD_CENTER: [number, number] = [17.385, 78.4867];
 const DEFAULT_ZOOM = 12;
 const DARK_TILE = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
 const LIGHT_TILE = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
@@ -75,6 +75,7 @@ interface Props {
   selectedHotspotId: string | null;
   routeComparisonMode: boolean;
   comparisonAccId: string | null;
+  flyToAreaMarkers: MapMarkerWithHistory[];
 }
 
 // ── Main component ───────────────────────────────────────────
@@ -82,18 +83,28 @@ export default function SafetyMap({
   mode, selectedMonth, selectedMarker, onMarkerSelect, filter,
   accommodationId, collegeId, selectedHotspotId,
   routeComparisonMode, comparisonAccId,
+  flyToAreaMarkers,
 }: Props) {
-  const [markers, setMarkers] = useState<MapMarkerWithHistory[]>([]);
   const [loading, setLoading] = useState(true);
-  const [flyToAreaMarkers, setFlyToAreaMarkers] = useState<MapMarkerWithHistory[]>([]);
+  const [markers, setMarkers] = useState<MapMarkerWithHistory[]>([]);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [isDark, setIsDark] = useState(() => document.documentElement.classList.contains('dark'));
 
-  const isDark = document.documentElement.classList.contains('dark');
   const mapKey = `${isDark ? 'dark' : 'light'}-${mode}`;
+
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, []);
+
 
   useEffect(() => {
     fetchMapMarkersWithHistory()
       .then(setMarkers)
-      .catch(console.error)
+      .catch((err) => { setApiError('Failed to load safety data. Please try again.'); console.error(err); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -127,14 +138,16 @@ export default function SafetyMap({
     return getRouteComparison(comparisonAccId, accommodationId ?? '', collegeId);
   }, [routeComparisonMode, comparisonAccId, collegeId, accommodationId]);
 
-  // Expose setFlyToAreaMarkers via window for SearchBar
-  useEffect(() => {
-    (window as any).__safestay_flyToArea = (m: MapMarkerWithHistory[]) => setFlyToAreaMarkers(m);
-    return () => { delete (window as any).__safestay_flyToArea; };
-  }, []);
-
   return (
     <div className="relative h-full w-full">
+      {/* Error banner */}
+      {apiError && (
+        <div className="absolute top-2 left-2 right-2 z-[1000] bg-red-50 border border-red-200 rounded-lg px-4 py-2 text-sm text-red-700 flex items-center justify-between">
+          <span>{apiError}</span>
+          <button onClick={() => setApiError(null)} className="text-red-500 hover:text-red-700 font-medium ml-2">Dismiss</button>
+        </div>
+      )}
+
       {/* Loading overlay */}
       {loading && (
         <div className="absolute inset-0 z-[1000] flex items-center justify-center bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
@@ -146,7 +159,7 @@ export default function SafetyMap({
       )}
 
       {/* Map */}
-      <MapContainer key={mapKey} center={HYDERABAD_CENTER} zoom={DEFAULT_ZOOM}
+      <MapContainer key={mapKey} center={DEFAULT_MAP_CENTER} zoom={DEFAULT_ZOOM}
         scrollWheelZoom={true} className="h-full w-full rounded-none" zoomControl={true}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/">CARTO</a>'
@@ -170,14 +183,6 @@ export default function SafetyMap({
           </Marker>
         ))}
       </MapContainer>
-
-      {/* Expose flyToArea to parent */}
-      <div style={{ display: 'none' }} data-flytoarea="true" />
     </div>
   );
-}
-
-// Export for parent to trigger area zoom
-export function triggerAreaZoom(markers: MapMarkerWithHistory[]) {
-  (window as any).__safestay_flyToArea?.(markers);
 }

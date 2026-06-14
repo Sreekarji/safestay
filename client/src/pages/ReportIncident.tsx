@@ -22,6 +22,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollReveal, FadeIn } from '@/components/ParallaxEffect';
 import { useAuthStore } from '@/stores/authStore';
 import { ReportCategory } from '@/types';
+import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -134,7 +135,7 @@ export default function ReportIncident() {
     defaultValues: {
       accommodationId: '',
       title: '',
-      category: undefined as unknown as ReportCategory,
+      category: 'other' as ReportCategory,
       severity: 5,
       description: '',
     },
@@ -164,7 +165,7 @@ export default function ReportIncident() {
           setAccommodations(list);
         }
       } catch {
-        // silent
+        toast.error('Failed to load accommodations. Please try again.');
       } finally {
         if (!cancelled) setLoadingAccommodations(false);
       }
@@ -484,7 +485,7 @@ export default function ReportIncident() {
               onChange={(e) =>
                 setValue('severity', Number(e.target.value), { shouldValidate: true })
               }
-              className="w-full h-2 rounded-full appearance-none cursor-pointer"
+              className="w-full h-2 rounded-full appearance-none cursor-pointer focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               style={{
                 background: getSeverityGradient(watchedSeverity),
               }}

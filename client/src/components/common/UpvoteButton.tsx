@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react';
 import { ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+import { API_URL } from '@/lib/constants';
+import { useAuthStore } from '@/stores/authStore';
 
 interface UpvoteButtonProps {
   reportId: string;
@@ -27,8 +27,8 @@ export function UpvoteButton({ reportId, initialCount, initialUpvoted = false, c
     setLoading(true);
 
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API}/api/reports/${reportId}/upvote`, {
+      const token = useAuthStore.getState().token;
+      const res = await fetch(`${API_URL}/api/reports/${reportId}/upvote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

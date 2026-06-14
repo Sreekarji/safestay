@@ -62,6 +62,7 @@ export function Navbar() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [hasNotifications] = useState(false);
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -100,9 +101,9 @@ export function Navbar() {
           <LanguageToggle />
           {isAuthenticated && (
             <>
-              <button className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 transition-colors">
+              <button onClick={() => navigate('/my-reports')} className="relative rounded-lg p-2 text-slate-600 hover:bg-slate-100 transition-colors" title="Notifications">
                 <Bell className="h-5 w-5" />
-                <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />
+                {hasNotifications && <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500" />}
               </button>
               <DropdownMenu
                 trigger={

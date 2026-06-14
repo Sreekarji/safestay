@@ -10,7 +10,19 @@
     "ownerDashboard": "యజమాని డాష్‌బోర్డ్",
     "addProperty": "ఆస్తి జోడించండి",
     "adminDashboard": "అడ్మిన్ డాష్‌బోర్డ్",
-    "accommodations": "వసతి"
+    "accommodations": "వసతి",
+    "safetyMap": "భద్రతా మ్యాప్",
+    "submitReport": "నివేదిక సమర్పించండి"
+  },
+  "footer": {
+    "product": "ఉత్పత్తి",
+    "resources": "వనరులు",
+    "contact": "సంప్రదించండి",
+    "about": "మా గురించి",
+    "privacy": "గోప్యతా విధానం",
+    "terms": "సేవా నిబంధనలు",
+    "rights": "అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి.",
+    "copyright": "© {{year}} SafeStay. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి."
   },
   "auth": {
     "login": "లాగిన్",
@@ -47,7 +59,12 @@
     "enterPhone": "10-అంకెల ఫోన్ నంబర్ నమోదు చేయండి",
     "enterPassword": "మీ పాస్‌వర్డ్ నమోదు చేయండి",
     "createStrongPassword": "8+ అక్షరాలు, సంఖ్య & ప్రత్యేక అక్షరం",
-    "phoneHint": "10-అంకెల భారతీయ మొబైల్ నంబర్"
+    "phoneHint": "10-అంకెల భారతీయ మొబైల్ నంబర్",
+    "createYourAccount": "మీ ఖాతా సృష్టించండి",
+    "registerSubtitle": "భద్రతా సమస్యలను నివేదించడానికి మరియు ట్రాక్ చేయడానికి విద్యార్థిగా చేరండి",
+    "propertyOwnerPrompt": "మీరు ఆస్తి యజమానా?",
+    "registerAsOwner": "యజమానిగా నమోదు చేయండి",
+    "registrationFailed": "నమోదు విఫలమైంది"
   },
   "report": {
     "title": "నివేదిక శీర్షిక",
@@ -119,7 +136,15 @@
     "reports": "నివేదికలు",
     "area": "ప్రాంతం",
     "accommodations": "వసతులు",
-    "searchArea": "ప్రాంతం వెతకండి..."
+    "searchArea": "ప్రాంతం వెతకండి...",
+    "searchPlaceholder": "స్థానం, హాస్టల్ పేరు లేదా ప్రాంతం వెతకండి...",
+    "filterLabel": "ఫిల్టర్:",
+    "filterAll": "అన్నీ",
+    "filterSafe": "సురక్షితం (70+)",
+    "filterModerate": "మధ్యస్థం (40-69)",
+    "filterRisky": "ప్రమాదకరం (<40)",
+    "locationCount": "{{count}} స్థానాలు",
+    "noLocationsFound": "\"{{query}}\" కోసం స్థానాలు కనుగొనబడలేదు"
   },
   "ai": {
     "analysis": "AI విశ్లేషణ",
@@ -164,6 +189,7 @@
     "features": "లక్షణాలు",
     "cta": "వసతులను మరింత సురక్షితంగా చేయడానికి సిద్ధంగా ఉన్నారా?",
     "ctaButton": "వేలమంది విద్యార్థులతో చేరండి",
+    "step": "దశ",
     "step1Title": "సమస్యను నివేదించండి",
     "step1Desc": "చిత్రాలు మరియు వివరాలతో మీ వసతి గురించి భద్రతా ఆందోళనలను సమర్పించండి",
     "step2Title": "AI ధృవీకరిస్తుంది",
@@ -190,5 +216,26 @@
     "resources": "వనరులు",
     "contact": "సంప్రదించండి",
     "copyright": "© 2025 SafeStay. అన్ని హక్కులు రిజర్వ్ చేయబడ్డాయి."
+  },
+  "error": {
+    "somethingWentWrong": "ఏదో తప్పు జరిగింది",
+    "unexpectedError": "ఊహించని లోపం సంభవించింది. దయచేసి మళ్ళీ ప్రయత్నించండి.",
+    "tryAgain": "మళ్ళీ ప్రయత్నించండి"
+  },
+  "analytics": {
+    "loading": "ఎనాలిటిక్స్ లోడ్ అవుతోంది...",
+    "title": "ఎనాలిటిక్స్ డాష్‌బోర్డ్",
+    "totalProperties": "మొత్తం ఆస్తులు",
+    "totalReports": "మొత్తం నివేదికలు",
+    "averageSSI": "సగటు SSI",
+    "highRiskCount": "అధిక ప్రమాద గణన",
+    "avgRouteSSI": "సగటు మార్గం SSI",
+    "safestRoute": "అత్యంత సురక్షితమైన మార్గం",
+    "highestRiskZone": "అత్యధిక ప్రమాద ప్రాంతం",
+    "activeAlerts": "యాక్టివ్ హెచ్చరికలు",
+    "ssiTrend": "SSI ట్రెండ్ (30 రోజులు)",
+    "areaRiskComparison": "ప్రాంత ప్రమాద పోలిక",
+    "categoryBreakdown": "వర్గ విభజన",
+    "recentReports": "ఇటీవలి నివేదికలు"
   }
 }

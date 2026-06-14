@@ -9,11 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useAuthStore } from '@/stores/authStore';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-
 export function OwnerLogin() {
   const navigate = useNavigate();
-  const { clearError, loading } = useAuthStore();
+  const { login, clearError, loading } = useAuthStore();
   const [localError, setLocalError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -29,16 +27,7 @@ export function OwnerLogin() {
     try {
       setLocalError(null);
       clearError();
-      const res = await fetch(`${API}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message || 'Login failed');
-      // Store token and user in authStore
-      useAuthStore.getState().setToken(result.token);
-      useAuthStore.getState().setUser(result.user);
+      await login(data as { email: string; password: string });
       navigate('/owner/dashboard');
     } catch (err: any) {
       setLocalError(err.message || 'Login failed');

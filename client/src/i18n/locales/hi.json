@@ -10,7 +10,19 @@
     "ownerDashboard": "मालिक डैशबोर्ड",
     "addProperty": "संपत्ति जोड़ें",
     "adminDashboard": "एडमिन डैशबोर्ड",
-    "accommodations": "आवास"
+    "accommodations": "आवास",
+    "safetyMap": "सुरक्षा मानचित्र",
+    "submitReport": "रिपोर्ट सबमिट करें"
+  },
+  "footer": {
+    "product": "उत्पाद",
+    "resources": "संसाधन",
+    "contact": "संपर्क",
+    "about": "हमारे बारे में",
+    "privacy": "गोपनीयता नीति",
+    "terms": "सेवा की शर्तें",
+    "rights": "सर्वाधिकार सुरक्षित।",
+    "copyright": "© {{year}} SafeStay. सर्वाधिकार सुरक्षित."
   },
   "auth": {
     "login": "लॉगिन",
@@ -47,7 +59,12 @@
     "enterPhone": "10 अंकों का फ़ोन नंबर दर्ज करें",
     "enterPassword": "अपना पासवर्ड दर्ज करें",
     "createStrongPassword": "8+ अक्षर, संख्या और विशेष अक्षर",
-    "phoneHint": "10 अंकों का भारतीय मोबाइल नंबर"
+    "phoneHint": "10 अंकों का भारतीय मोबाइल नंबर",
+    "createYourAccount": "अपना खाता बनाएं",
+    "registerSubtitle": "सुरक्षा समस्याओं की रिपोर्ट और ट्रैक करने के लिए छात्र के रूप में जुड़ें",
+    "propertyOwnerPrompt": "क्या आप संपत्ति मालिक हैं?",
+    "registerAsOwner": "मालिक के रूप में रजिस्टर करें",
+    "registrationFailed": "पंजीकरण विफल"
   },
   "report": {
     "title": "रिपोर्ट शीर्षक",
@@ -119,7 +136,15 @@
     "reports": "रिपोर्ट",
     "area": "क्षेत्र",
     "accommodations": "आवास",
-    "searchArea": "क्षेत्र खोजें..."
+    "searchArea": "क्षेत्र खोजें...",
+    "searchPlaceholder": "स्थान, हॉस्टल नाम या क्षेत्र खोजें...",
+    "filterLabel": "फ़िल्टर:",
+    "filterAll": "सभी",
+    "filterSafe": "सुरक्षित (70+)",
+    "filterModerate": "मध्यम (40-69)",
+    "filterRisky": "जोखिमपूर्ण (<40)",
+    "locationCount": "{{count}} स्थान",
+    "noLocationsFound": "\"{{query}}\" के लिए कोई स्थान नहीं मिला"
   },
   "ai": {
     "analysis": "AI विश्लेषण",
@@ -164,6 +189,7 @@
     "features": "विशेषताएं",
     "cta": "आवासों को सुरक्षित बनाने के लिए तैयार?",
     "ctaButton": "हजारों छात्रों से जुड़ें",
+    "step": "चरण",
     "step1Title": "समस्या की रिपोर्ट करें",
     "step1Desc": "तस्वीरों और विवरण के साथ अपने आवास के बारे में सुरक्षा चिंताएं सबमिट करें",
     "step2Title": "AI सत्यापित करता है",
@@ -190,5 +216,26 @@
     "resources": "संसाधन",
     "contact": "संपर्क",
     "copyright": "© 2025 SafeStay. सर्वाधिकार सुरक्षित."
+  },
+  "error": {
+    "somethingWentWrong": "कुछ गलत हो गया",
+    "unexpectedError": "एक अप्रत्याशित त्रुटि हुई। कृपया पुनः प्रयास करें।",
+    "tryAgain": "पुनः प्रयास करें"
+  },
+  "analytics": {
+    "loading": "एनालिटिक्स लोड हो रहा है...",
+    "title": "एनालिटिक्स डैशबोर्ड",
+    "totalProperties": "कुल संपत्तियां",
+    "totalReports": "कुल रिपोर्ट",
+    "averageSSI": "औसत SSI",
+    "highRiskCount": "उच्च जोखिम गणना",
+    "avgRouteSSI": "औसत मार्ग SSI",
+    "safestRoute": "सबसे सुरक्षित मार्ग",
+    "highestRiskZone": "सबसे उच्च जोखिम क्षेत्र",
+    "activeAlerts": "सक्रिय अलर्ट",
+    "ssiTrend": "SSI रुझान (30 दिन)",
+    "areaRiskComparison": "क्षेत्र जोखिम तुलना",
+    "categoryBreakdown": "श्रेणी विभाजन",
+    "recentReports": "हालिया रिपोर्ट"
   }
 }

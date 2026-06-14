@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime, getStatusColor, getSSITailwind, getSSILabel } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
 import type { Accommodation, Report } from '@/types';
+import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -96,7 +97,7 @@ export default function OwnerDashboard() {
           resolvedIssues: resolved,
         });
       } catch (err) {
-        console.error('Failed to load owner dashboard:', err);
+        toast.error('Failed to load dashboard data. Please try again.');
         setError('Failed to load dashboard data. Please try again.');
       } finally {
         setLoading(false);
@@ -185,7 +186,7 @@ export default function OwnerDashboard() {
       )}
 
       {/* Stats Cards */}
-      <StaggerReveal stagger={0.1}>
+      <StaggerReveal stagger={100}>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card className="border-l-4 border-l-blue-500 shadow-sm hover:shadow-md transition-shadow">
             <CardContent className="p-5">

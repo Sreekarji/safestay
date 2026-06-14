@@ -37,6 +37,13 @@ export function ReportForm({ onSubmit, loading }: Props) {
       .catch(() => {});
   }, []);
 
+  // Revoke object URLs on unmount or when previews change to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      previews.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [previews]);
+
   const onDrop = useCallback((accepted: File[]) => {
     const newImgs = [...images, ...accepted].slice(0, 5);
     setImages(newImgs);
@@ -139,7 +146,7 @@ export function ReportForm({ onSubmit, loading }: Props) {
                 <h3 className="text-lg font-semibold text-slate-900">{t('report.review')}</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div><span className="text-slate-500">{t('report.title')}:</span><p className="font-medium">{watch('title')}</p></div>
-                  <div><span className="text-slate-500">{t('report.category')}:</span><p className="font-medium">{selectedCategory}</p></div>
+                  <div><span className="text-slate-500">{t('report.category')}:</span><p className="font-medium">{categories.find(c => c.value === selectedCategory)?.label || selectedCategory}</p></div>
                   <div><span className="text-slate-500">{t('report.severity')}:</span><Badge className={getSeverityColor(selectedSeverity || '')}>{selectedSeverity}</Badge></div>
                   <div><span className="text-slate-500">{t('report.location')}:</span><p className="font-medium">{watch('location')}</p></div>
                 </div>

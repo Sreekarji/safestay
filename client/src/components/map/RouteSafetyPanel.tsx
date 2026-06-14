@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import type { RouteIntelligence } from '../../types';
 import { getSSIColor, CATEGORY_LABELS, formatMonth } from '../../types';
+import { cn } from '@/lib/utils';
 
 interface Props {
   route: RouteIntelligence;
@@ -41,7 +42,7 @@ function InfoCard({ icon, label, value, color }: { icon: React.ReactNode; label:
         <div className="text-slate-400">{icon}</div>
         <span className="text-[10px] text-slate-400 font-medium">{label}</span>
       </div>
-      <p className="text-sm font-bold" style={{ color: color || 'rgb(15 23 42)' }}>{value}</p>
+      <p className={cn("text-sm font-bold", !color && "text-slate-950 dark:text-white")} style={color ? { color } : undefined}>{value}</p>
     </motion.div>
   );
 }

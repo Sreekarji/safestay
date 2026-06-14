@@ -197,19 +197,12 @@ export default function RouteOverlay({ route, selectedHotspotId }: Props) {
                   <p className="text-sm font-bold" style={{ color: hs.severity >= 4 ? '#ef4444' : hs.severity >= 3 ? '#f97316' : '#f59e0b' }}>{hs.severity}/5</p>
                 </div>
               </div>
-              <p className="text-[10px] text-slate-400 mt-2">Last reported: {formatMonth(hs.lastReported?.slice(0, 7) || '2025-01')}</p>
+              <p className="text-[10px] text-slate-400 mt-2">Last reported: {formatMonth(hs.lastReported?.slice(0, 7) || new Date().toISOString().slice(0, 7))}</p>
             </div>
           </Popup>
         </Marker>
       ))}
 
-      {/* Pulse animation CSS */}
-      <style>{`
-        @keyframes hotspot-pulse {
-          0%, 100% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.1); opacity: 0.8; }
-        }
-      `}</style>
     </>
   );
 }

@@ -64,16 +64,16 @@ export function Footer() {
             </h3>
             <ul className="mt-4 space-y-3">
               <li>
-                <a href="mailto:contact@safestay.com" className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
+                <a href="mailto:support@safestay.in" className="text-slate-400 hover:text-white transition-colors flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  contact@safestay.com
+                  support@safestay.in
                 </a>
               </li>
               <li className="flex gap-4 pt-2">
-                <a href="#" className="text-slate-400 hover:text-white transition-colors">
+                <a href="https://github.com/safestay" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors">
                   <Github className="h-5 w-5" />
                 </a>
-                <a href="#" className="text-slate-400 hover:text-white transition-colors">
+                <a href="https://twitter.com/safestay" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors">
                   <Twitter className="h-5 w-5" />
                 </a>
               </li>
@@ -87,7 +87,7 @@ export function Footer() {
             <span className="text-lg font-bold text-primary-400">SafeStay</span>
           </div>
           <p className="text-sm text-slate-400">
-            © 2025 SafeStay. {t('footer.rights')}
+            © {new Date().getFullYear()} SafeStay. {t('footer.rights')}
           </p>
         </div>
       </div>

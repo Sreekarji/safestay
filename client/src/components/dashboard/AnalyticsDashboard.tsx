@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Building2, FileText, Shield, AlertTriangle, MapPin, Clock, TrendingUp, Activity } from 'lucide-react';
 import { fetchDashboardStats, fetchSSITrend, fetchAreaRisks, fetchCategoryBreakdown, fetchRecentReports, getRouteMetrics } from '@/services/mapData';
@@ -25,28 +26,45 @@ function StatCard({ icon: Icon, label, value, color }: { icon: any; label: strin
 }
 
 export default function AnalyticsDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [trend, setTrend] = useState<SSITrend[]>([]);
   const [areas, setAreas] = useState<AreaRisk[]>([]);
   const [categories, setCategories] = useState<CategoryBreakdown[]>([]);
   const [recent, setRecent] = useState<RecentReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([fetchDashboardStats(), fetchSSITrend(), fetchAreaRisks(), fetchCategoryBreakdown(), fetchRecentReports()])
       .then(([s, t, a, c, r]) => { setStats(s); setTrend(t); setAreas(a); setCategories(c); setRecent(r); })
-      .catch(console.error)
+      .catch((err) => { console.error(err); setError('Failed to load analytics data. Please try again.'); })
       .finally(() => setLoading(false));
   }, []);
 
-  const routeMetrics = getRouteMetrics();
+  const routeMetrics = useMemo(() => getRouteMetrics(), []);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-slate-500">Loading analytics...</p>
+          <p className="text-sm text-slate-500">{t('analytics.loading')}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="flex flex-col items-center gap-3 text-center">
+          <AlertTriangle className="w-10 h-10 text-red-500" />
+          <p className="text-sm text-slate-600 dark:text-slate-400">{error}</p>
+          <button onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors">
+            Retry
+          </button>
         </div>
       </div>
     );
@@ -55,31 +73,31 @@ export default function AnalyticsDashboard() {
   return (
     <div className="h-full overflow-y-auto bg-slate-50 dark:bg-slate-900/50 p-6">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">Analytics Dashboard</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-6">{t('analytics.title')}</h1>
 
         {/* Stats cards */}
         {stats && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <StatCard icon={Building2} label="Total Properties" value={stats.totalAccommodations} color="#6366f1" />
-            <StatCard icon={FileText} label="Total Reports" value={stats.totalReports} color="#3b82f6" />
-            <StatCard icon={Shield} label="Average SSI" value={stats.averageSSI} color="#22c55e" />
-            <StatCard icon={AlertTriangle} label="High Risk Count" value={stats.highRiskCount} color="#ef4444" />
+            <StatCard icon={Building2} label={t('analytics.totalProperties')} value={stats.totalAccommodations} color="#6366f1" />
+            <StatCard icon={FileText} label={t('analytics.totalReports')} value={stats.totalReports} color="#3b82f6" />
+            <StatCard icon={Shield} label={t('analytics.averageSSI')} value={stats.averageSSI} color="#22c55e" />
+            <StatCard icon={AlertTriangle} label={t('analytics.highRiskCount')} value={stats.highRiskCount} color="#ef4444" />
           </div>
         )}
 
         {/* Route metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard icon={TrendingUp} label="Avg Route SSI" value={routeMetrics.avgRouteSSI} color="#22c55e" />
-          <StatCard icon={MapPin} label="Safest Route" value={routeMetrics.safestRoute.split('(')[0].trim()} color="#3b82f6" />
-          <StatCard icon={AlertTriangle} label="Highest Risk Zone" value={routeMetrics.highestRiskZone} color="#f59e0b" />
-          <StatCard icon={Activity} label="Active Alerts" value={routeMetrics.recentAlerts} color="#ef4444" />
+          <StatCard icon={TrendingUp} label={t('analytics.avgRouteSSI')} value={routeMetrics.avgRouteSSI} color="#22c55e" />
+          <StatCard icon={MapPin} label={t('analytics.safestRoute')} value={routeMetrics.safestRoute.split('(')[0].trim()} color="#3b82f6" />
+          <StatCard icon={AlertTriangle} label={t('analytics.highestRiskZone')} value={routeMetrics.highestRiskZone} color="#f59e0b" />
+          <StatCard icon={Activity} label={t('analytics.activeAlerts')} value={routeMetrics.recentAlerts} color="#ef4444" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* SSI Trend Chart */}
           <div className="bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700/50">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-500" /> SSI Trend (30 days)
+              <TrendingUp className="w-4 h-4 text-blue-500" /> {t('analytics.ssiTrend')}
             </h3>
             <ResponsiveContainer width="100%" height={220}>
               <AreaChart data={trend} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -96,7 +114,7 @@ export default function AnalyticsDashboard() {
           {/* Area Risk Chart */}
           <div className="bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700/50">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-amber-500" /> Area Risk Comparison
+              <MapPin className="w-4 h-4 text-amber-500" /> {t('analytics.areaRiskComparison')}
             </h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={areas} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
@@ -117,7 +135,7 @@ export default function AnalyticsDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Category Breakdown */}
           <div className="bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700/50">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">Category Breakdown</h3>
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">{t('analytics.categoryBreakdown')}</h3>
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie data={categories} dataKey="count" nameKey="category" cx="50%" cy="50%" outerRadius={70} innerRadius={40}>
@@ -139,7 +157,7 @@ export default function AnalyticsDashboard() {
           {/* Recent Reports */}
           <div className="lg:col-span-2 bg-white dark:bg-slate-800/50 rounded-xl p-5 border border-slate-200 dark:border-slate-700/50">
             <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-slate-400" /> Recent Reports
+              <Clock className="w-4 h-4 text-slate-400" /> {t('analytics.recentReports')}
             </h3>
             <div className="space-y-2">
               {recent.slice(0, 8).map((r) => (

@@ -1,4 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react'
+import i18next from 'i18next'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -22,7 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo)
+    if (process.env.NODE_ENV !== 'production') console.error('Uncaught error:', error, errorInfo)
   }
 
   private handleReset = () => {
@@ -41,14 +42,14 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="h-8 w-8 text-red-500" />
           </div>
           <h2 className="text-xl font-semibold text-slate-900 mb-2">
-            Something went wrong
+            {i18next.t('error.somethingWentWrong')}
           </h2>
           <p className="text-sm text-slate-500 max-w-md mb-6">
-            {this.state.error?.message || 'An unexpected error occurred. Please try again.'}
+            {this.state.error?.message || i18next.t('error.unexpectedError')}
           </p>
           <Button onClick={this.handleReset} variant="outline" className="gap-2">
             <RefreshCw className="h-4 w-4" />
-            Try Again
+            {i18next.t('error.tryAgain')}
           </Button>
         </div>
       )

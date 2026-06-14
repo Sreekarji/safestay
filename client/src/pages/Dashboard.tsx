@@ -20,9 +20,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatRelativeTime, getStatusColor, getSSITailwind } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
+import { useTranslation } from 'react-i18next';
+import { API_URL } from '@/lib/constants';
+import toast from 'react-hot-toast';
 import type { Report, DashboardStats } from '@/types';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = API_URL;
 
 const CATEGORY_LABELS: Record<string, string> = {
   fire_safety: 'Fire Safety',
@@ -61,6 +64,7 @@ const SEVERITY_LABELS: Record<number, { text: string; color: string }> = {
 
 export function Dashboard() {
   const { user } = useAuthStore();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<DashboardStats>({
@@ -79,7 +83,7 @@ export function Dashboard() {
   useEffect(() => {
     async function loadReports() {
       try {
-        const token = localStorage.getItem('token');
+        const token = useAuthStore.getState().token;
         const res = await fetch(`${API}/api/reports/my-reports`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -104,7 +108,7 @@ export function Dashboard() {
         const totalUpvotes = reports.reduce((sum, r) => sum + (r.upvotes || 0), 0);
         setUpvotesReceived(totalUpvotes);
       } catch (err: any) {
-        console.error('Reports fetch error:', err);
+        toast.error('Could not load your reports.');
         setError('Could not load your reports.');
       } finally {
         setLoading(false);
@@ -116,32 +120,32 @@ export function Dashboard() {
 
   const hour = new Date().getHours();
   const greeting =
-    hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+    hour < 12 ? t('dashboard.goodMorning') : hour < 17 ? t('dashboard.goodAfternoon') : t('dashboard.goodEvening');
 
   const statCards = [
     {
-      label: 'Total Reports',
+      label: t('dashboard.totalReports'),
       value: stats.totalReports,
       icon: FileText,
       color: 'text-blue-600',
       bg: 'bg-blue-100',
     },
     {
-      label: 'Pending Review',
+      label: t('dashboard.pendingReview'),
       value: stats.pending,
       icon: Clock,
       color: 'text-amber-600',
       bg: 'bg-amber-100',
     },
     {
-      label: 'Resolved',
+      label: t('dashboard.resolved'),
       value: stats.resolved,
       icon: CheckCircle,
       color: 'text-emerald-600',
       bg: 'bg-emerald-100',
     },
     {
-      label: 'Upvotes Received',
+      label: t('dashboard.upvotesReceived'),
       value: upvotesReceived,
       icon: ThumbsUp,
       color: 'text-violet-600',
@@ -151,24 +155,24 @@ export function Dashboard() {
 
   const quickActions = [
     {
-      label: 'Report New Issue',
-      description: 'Submit a safety concern',
+      label: t('dashboard.reportNewIssue'),
+      description: t('dashboard.reportNewIssueDesc'),
       icon: AlertTriangle,
       to: '/report-incident',
       color: 'text-red-600',
       bg: 'bg-red-100',
     },
     {
-      label: 'View Safety Map',
-      description: 'Explore area safety scores',
+      label: t('dashboard.viewSafetyMap'),
+      description: t('dashboard.viewSafetyMapDesc'),
       icon: MapPin,
       to: '/map',
       color: 'text-blue-600',
       bg: 'bg-blue-100',
     },
     {
-      label: 'My Reports',
-      description: 'Track your submissions',
+      label: t('dashboard.myReportsAction'),
+      description: t('dashboard.myReportsActionDesc'),
       icon: Eye,
       to: '/my-reports',
       color: 'text-violet-600',
@@ -179,7 +183,7 @@ export function Dashboard() {
   // Loading skeleton
   if (loading && statsLoading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <div className="animate-pulse">
           <div className="h-48 bg-gradient-to-r from-primary-600 to-indigo-600" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16">
@@ -196,7 +200,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Hero Section */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImVub3Zsb3kiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0djJoLTJ2LTJoMnptMCAyMHYyaC0ydi0yaDJ6TTIwIDM0djJoLTJ2LTJoMnpNMzQgMjB2MmgtMnYtMmgyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
@@ -304,7 +308,7 @@ export function Dashboard() {
                       <p className="text-sm text-slate-400 mt-1">
                         Submit your first safety report to get started.
                       </p>
-                      <Link to="/report/new" className="mt-4 inline-block">
+                      <Link to="/report-incident" className="mt-4 inline-block">
                         <Button size="sm">
                           <AlertTriangle className="h-4 w-4 mr-2" />
                           Report an Issue

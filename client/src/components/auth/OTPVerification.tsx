@@ -12,7 +12,7 @@ export function OTPVerification({ onSubmit, onResend, loading, email }: Props) {
   useEffect(() => { if (countdown > 0) { const timer = setTimeout(() => setCountdown(countdown - 1), 1000); return () => clearTimeout(timer); } }, [countdown]);
   const handleChange = (i: number, v: string) => { if (v.length > 1) return; const n = [...otp]; n[i] = v; setOtp(n); if (v && i < 5) refs.current[i + 1]?.focus(); };
   const handleKey = (i: number, e: React.KeyboardEvent) => { if (e.key === 'Backspace' && !otp[i] && i > 0) refs.current[i - 1]?.focus(); };
-  const handleSubmit = async () => { const code = otp.join(''); if (code.length === 6) { await onSubmit(code); setSuccess(true); } };
+  const handleSubmit = async () => { const code = otp.join(''); if (code.length === 6) { try { await onSubmit(code); setSuccess(true); } catch { /* parent handles error */ } } };
   if (success) return <div className="text-center py-8"><CheckCircle2 className="h-16 w-16 text-emerald-500 mx-auto mb-4" /><h3 className="text-xl font-semibold">{t('common.success')}</h3></div>;
   return (
     <div className="space-y-6">

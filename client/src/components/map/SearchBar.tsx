@@ -1,4 +1,5 @@
 import { useRef, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { MapMarkerWithHistory } from '../../types';
 import { getSSIColor, getSSILabel } from '../../types';
 
@@ -31,6 +32,7 @@ function groupByArea(markers: MapMarkerWithHistory[]): AreaGroup[] {
 
 export default function SearchBar({ markers, query, onQueryChange, onMarkerSelect, onAreaZoom, showDropdown, onDropdownChange }: Props) {
   const searchRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation();
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -65,7 +67,7 @@ export default function SearchBar({ markers, query, onQueryChange, onMarkerSelec
           type="text" value={query}
           onChange={(e) => { onQueryChange(e.target.value); onDropdownChange(true); }}
           onFocus={() => query.trim() && onDropdownChange(true)}
-          placeholder="Search location, hostel name, or area..."
+          placeholder={t('map.searchPlaceholder')}
           className="w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 rounded-xl pl-10 pr-9 py-2.5 border border-slate-200 dark:border-slate-700/50 outline-none focus:border-blue-500/60 focus:ring-1 focus:ring-blue-500/30 transition-all shadow-lg"
         />
         {query && (

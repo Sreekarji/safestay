@@ -8,23 +8,13 @@ import { UpvoteButton } from '@/components/common/UpvoteButton';
 import { VerifiedBadge } from '@/components/common/VerifiedBadge';
 import { useAuthStore } from '@/stores/authStore';
 import type { Report, User } from '@/types';
+import { CATEGORY_LABELS } from '@/types';
 
 interface Props {
   report: Report;
   index?: number;
   onDelete?: (id: string) => void;
 }
-
-const categoryLabels: Record<string, string> = {
-  fire_safety: 'Fire Safety',
-  water_quality: 'Water Quality',
-  structural: 'Structural',
-  electrical: 'Electrical',
-  hygiene: 'Hygiene',
-  security: 'Security',
-  food_safety: 'Food Safety',
-  other: 'Other',
-};
 
 const categoryIcons: Record<string, string> = {
   fire_safety: '🔥',
@@ -55,7 +45,7 @@ export function ReportCard({ report, index = 0, onDelete }: Props) {
   const severityLabel =
     report.severity <= 3 ? 'low' : report.severity <= 6 ? 'medium' : report.severity <= 8 ? 'high' : 'critical';
   const accommodation = typeof report.accommodationId === 'object' ? report.accommodationId : null;
-  const reportUser = typeof report.userId === 'object' ? (report.userId as User) : null;
+  const reportUser = report.userId && typeof report.userId === 'object' ? (report.userId as User) : null;
   const isOwner = user && reportUser && user._id === reportUser._id;
   const isUpvoted = user ? report.upvotesBy?.includes(user._id) : false;
   const consensus = report.aiVerification?.consensus;
@@ -81,7 +71,7 @@ export function ReportCard({ report, index = 0, onDelete }: Props) {
         {/* Tags */}
         <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant="secondary" className="text-xs">
-            {categoryLabels[report.category] || report.category}
+            {CATEGORY_LABELS[report.category] || report.category}
           </Badge>
           <Badge className={cn('text-xs', getSeverityColor(severityLabel))}>{severityLabel}</Badge>
           {consensus && (

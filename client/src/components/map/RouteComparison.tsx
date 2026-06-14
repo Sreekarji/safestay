@@ -63,6 +63,7 @@ function RouteCard({ name, score, distance, time, hotspots, riskLevel, isWinner 
               <p className="text-[9px] text-slate-400 uppercase">Risk Zones</p>
               <p className="text-xs font-bold text-slate-900 dark:text-white">{hotspots}</p>
             </div>
+            {/* Night safety = base score minus 10 (min 20) to reflect reduced visibility and increased risk at night */}
             <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg px-2.5 py-1.5">
               <p className="text-[9px] text-slate-400 uppercase">Night Safety</p>
               <p className="text-xs font-bold" style={{ color: getSSIColor(score - 10) }}>{Math.max(20, score - 10)}</p>

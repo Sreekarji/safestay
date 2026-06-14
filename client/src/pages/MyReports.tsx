@@ -25,10 +25,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatRelativeTime, getStatusColor, formatDate } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
+import { API_URL } from '@/lib/constants';
 import type { Report } from '@/types';
 import toast from 'react-hot-toast';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = API_URL;
 
 const CATEGORY_LABELS: Record<string, string> = {
   fire_safety: 'Fire Safety',
@@ -60,7 +61,7 @@ const SEVERITY_CONFIG: Record<number, { text: string; color: string }> = {
   5: { text: 'Medium', color: 'text-amber-600 bg-amber-50' },
   6: { text: 'Medium', color: 'text-amber-600 bg-amber-50' },
   7: { text: 'High', color: 'text-orange-600 bg-orange-50' },
-  8: { text: 'High', color: 'text-orange-600 bg-amber-50' },
+  8: { text: 'High', color: 'text-red-600 bg-red-50' },
   9: { text: 'Critical', color: 'text-red-600 bg-red-50' },
   10: { text: 'Critical', color: 'text-red-600 bg-red-50' },
 };
@@ -92,7 +93,7 @@ export function MyReports() {
     async function loadReports() {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
+        const token = useAuthStore.getState().token;
         const res = await fetch(`${API}/api/reports/my-reports`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -168,7 +169,7 @@ export function MyReports() {
   const handleDelete = async (reportId: string) => {
     try {
       setDeletingId(reportId);
-      const token = localStorage.getItem('token');
+      const token = useAuthStore.getState().token;
       const res = await fetch(`${API}/api/reports/${reportId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
@@ -188,7 +189,7 @@ export function MyReports() {
   // Loading skeleton
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
         <div className="animate-pulse">
           <div className="h-48 bg-gradient-to-r from-primary-600 to-indigo-600" />
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16">
@@ -205,7 +206,7 @@ export function MyReports() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
       <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-indigo-800">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImVub3Zsb3kiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PHBhdGggZD0iTTM2IDE0djJoLTJ2LTJoMnptMCAyMHYyaC0ydi0yaDJ6TTIwIDM0djJoLTJ2LTJoMnpNMzQgMjB2MmgtMnYtMmgyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-30" />
@@ -285,7 +286,7 @@ export function MyReports() {
 
         {/* Tab Filters */}
         <ScrollReveal delay={150}>
-          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-4 mb-6 scrollbar-hide" role="tablist">
             {STATUS_TABS.map((tab) => {
               const isActive = activeTab === tab.key;
               const Icon = tab.icon;
@@ -293,6 +294,8 @@ export function MyReports() {
                 <button
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
+                  role="tab"
+                  aria-selected={isActive}
                   className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all ${
                     isActive
                       ? 'bg-primary-600 text-white shadow-md shadow-primary-200'

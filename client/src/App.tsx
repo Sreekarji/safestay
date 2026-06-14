@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { Layout } from '@/components/layout/Layout';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
@@ -14,7 +14,6 @@ import { ReportSubmit } from '@/pages/ReportSubmit';
 import { ReportDetail } from '@/pages/ReportDetail';
 import MapView from '@/pages/MapView';
 import AnalyticsDashboard from '@/components/dashboard/AnalyticsDashboard';
-import MapTest from '@/components/map/MapTest';
 import { MyReports } from '@/pages/MyReports';
 import Profile from '@/pages/Profile';
 import { AccommodationList } from '@/pages/AccommodationList';
@@ -35,15 +34,15 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const checkAuth = useAuthStore((s) => s.checkAuth);
+  
 
   useEffect(() => {
     checkAuth();
   }, []);
 
   return (
-    <BrowserRouter>
       <ErrorBoundary>
-        <Toaster position="top-right" toastOptions={{ duration: 4000, style: { borderRadius: '12px', background: '#1E293B', color: '#fff', fontSize: '14px' } }} />
+        <Toaster position="top-right" toastOptions={{ duration: 4000, style: { borderRadius: '12px', background: document.documentElement.classList.contains('dark') ? '#0f172a' : '#1E293B', color: '#fff', fontSize: '14px' } }} />
         <Routes>
           <Route element={<Layout />}>
             {/* Public */}
@@ -56,7 +55,6 @@ export default function App() {
             <Route path="/accommodations/:id" element={<AccommodationDetail />} />
             <Route path="/map" element={<MapView />} />
             <Route path="/analytics" element={<AnalyticsDashboard />} />
-            <Route path="/map-test" element={<MapTest />} />
 
             {/* Owner */}
             <Route path="/owner/login" element={<OwnerLogin />} />
@@ -79,6 +77,5 @@ export default function App() {
           </Route>
         </Routes>
       </ErrorBoundary>
-    </BrowserRouter>
   );
 }

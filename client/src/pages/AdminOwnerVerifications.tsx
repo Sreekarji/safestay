@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { formatDate, formatRelativeTime } from '@/lib/utils';
 import { useAuthStore } from '@/stores/authStore';
+import toast from 'react-hot-toast';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -154,8 +155,7 @@ export default function AdminOwnerVerifications() {
         prev.map((v) => (v._id === id ? { ...v, status: 'approved' as const } : v)),
       );
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Failed to approve');
+      toast.error(err.message || 'Failed to approve');
     } finally {
       setApprovingId(null);
     }
@@ -196,8 +196,7 @@ export default function AdminOwnerVerifications() {
       setRejectingId(null);
       setRejectReason('');
     } catch (err: any) {
-      console.error(err);
-      alert(err.message || 'Failed to reject');
+      toast.error(err.message || 'Failed to reject');
     }
   };
 

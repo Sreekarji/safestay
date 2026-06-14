@@ -31,8 +31,8 @@ export function LoginForm({ onSubmit, error }: Props) {
         {errors.password && <p className="mt-1 text-xs text-red-500">{errors.password.message}</p>}
       </div>
       <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" className="rounded border-slate-300" /><span className="text-sm text-slate-600">{t('auth.rememberMe')}</span></label>
-        <button type="button" className="text-sm text-primary-600 hover:text-primary-700 font-medium">{t('auth.forgotPassword')}</button>
+        <label className="flex items-center gap-2 cursor-pointer"><input type="checkbox" id="rememberMe" name="rememberMe" className="rounded border-slate-300" /><span className="text-sm text-slate-600">{t('auth.rememberMe')}</span></label>
+        <button type="button" onClick={() => window.location.href='/forgot-password'} className="text-sm text-primary-600 hover:text-primary-700 font-medium">{t('auth.forgotPassword')}</button>
       </div>
       <Button type="submit" className="w-full" disabled={loading}>{loading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('auth.signingIn')}</> : t('auth.signIn')}</Button>
     </form>

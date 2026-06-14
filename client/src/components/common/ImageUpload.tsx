@@ -2,12 +2,12 @@ import { useState, useCallback, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Upload, X, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { API_URL } from '@/lib/constants';
+import { useAuthStore } from '@/stores/authStore';
 
 const MAX_FILES = 5;
 const MAX_SIZE_MB = 5;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 interface ImageUploadProps {
   value: string[];
@@ -24,11 +24,11 @@ export function ImageUpload({ value = [], onChange, maxFiles = MAX_FILES, classN
   const remaining = maxFiles - value.length;
 
   const uploadFile = async (file: File): Promise<string> => {
-    const token = localStorage.getItem('token');
+    const token = useAuthStore.getState().token;
     const formData = new FormData();
     formData.append('image', file);
 
-    const res = await fetch(`${API}/api/upload`, {
+    const res = await fetch(`${API_URL}/api/upload`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: formData,

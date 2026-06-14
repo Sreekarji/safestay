@@ -114,6 +114,7 @@ export function OwnerRegisterForm({ onSubmit, error }: Props) {
               <span className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 flex items-center text-xs">+91</span>
               <Input type="tel" placeholder="9876543210" className="pl-12" {...register('phone')} />
             </div>
+            <p className="mt-1 text-[11px] text-slate-400">India (+91) country code is assumed</p>
             {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>}
           </div>
 

@@ -22,9 +22,13 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import toast from 'react-hot-toast';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DEFAULT_MAP_CENTER } from '@/lib/constants';
 import { Card } from '@/components/ui/card';
 import { ScrollReveal, FadeIn } from '@/components/ParallaxEffect';
 import { useAuthStore } from '@/stores/authStore';
@@ -67,14 +71,12 @@ const PROPERTY_TYPES = [
 
 const ROOM_TYPE_OPTIONS = ['Single', 'Double', 'Triple', 'Dormitory', 'Studio', '1BHK', '2BHK', '3BHK'];
 
-// Default center: Hyderabad
-const DEFAULT_CENTER: [number, number] = [17.385, 78.4867];
 
 // Custom marker icon (fixes default Leaflet icon path issue in bundlers)
-const markerIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+const defaultMarkerIcon = new L.Icon({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -393,7 +395,7 @@ export default function AddProperty() {
                 </p>
                 <div className="rounded-xl overflow-hidden border border-slate-200" style={{ height: 320 }}>
                   <MapContainer
-                    center={markerPosition || DEFAULT_CENTER}
+                    center={markerPosition || DEFAULT_MAP_CENTER}
                     zoom={markerPosition ? 15 : 12}
                     className="w-full h-full"
                     style={{ height: '100%' }}
@@ -404,7 +406,7 @@ export default function AddProperty() {
                     />
                     <MapClickHandler onLocationSelect={handleLocationSelect} />
                     {markerPosition && (
-                      <Marker position={markerPosition} icon={markerIcon} />
+                      <Marker position={markerPosition} icon={defaultMarkerIcon} />
                     )}
                   </MapContainer>
                 </div>

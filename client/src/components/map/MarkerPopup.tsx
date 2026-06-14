@@ -18,7 +18,7 @@ export default function MarkerPopup({ marker, selectedMonth }: Props) {
   const diff = currentScore - prevScore;
 
   return (
-    <div style={{ padding: '4px', fontFamily: 'Inter, sans-serif', minWidth: '280px', maxWidth: '320px' }}>
+    <div className="p-1 font-sans min-w-[280px] max-w-[320px]">
       {/* Header */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
         <div>
@@ -92,17 +92,14 @@ export default function MarkerPopup({ marker, selectedMonth }: Props) {
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
             <polyline points="22 4 12 14.01 9 11.01" />
           </svg>
-          {currentScore >= 70 ? 'Verified' : 'Under review'}
+          {currentScore >= 70 ? 'Safe' : 'Under review'}
         </div>
       </div>
 
       {/* Action button */}
       <button
         onClick={() => navigate('/accommodation/' + marker.id)}
-        style={{
-          width: '100%', padding: '8px', borderRadius: '8px', background: '#6366f1',
-          color: '#fff', fontSize: '12px', fontWeight: 600, border: 'none', cursor: 'pointer',
-        }}
+        className="w-full px-2 py-2 rounded-lg bg-indigo-500 text-white text-xs font-semibold border-none cursor-pointer hover:bg-indigo-600 transition-colors"
       >
         View Details
       </button>

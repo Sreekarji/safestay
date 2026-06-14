@@ -12,6 +12,7 @@ import {
   Info,
   TrendingUp,
   DollarSign,
+  Droplets,
   Users,
   Map,
   Check,
@@ -33,14 +34,15 @@ import { useAuthStore } from '@/stores/authStore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { Accommodation, Report } from '@/types';
+import toast from 'react-hot-toast';
+import { DEFAULT_MAP_CENTER } from '@/lib/constants';
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // ---------- helpers ----------
 function getSSIGradient(ssi: number) {
-  if (ssi >= 80) return 'from-emerald-500 to-green-600';
-  if (ssi >= 60) return 'from-amber-400 to-yellow-500';
-  if (ssi >= 40) return 'from-orange-400 to-amber-500';
+  if (ssi >= 70) return 'from-emerald-500 to-green-600';
+  if (ssi >= 40) return 'from-amber-400 to-yellow-500';
   return 'from-red-500 to-rose-600';
 }
 
@@ -68,7 +70,7 @@ function getCategoryLabel(cat: string) {
 function getCategoryIcon(cat: string) {
   const icons: Record<string, React.ReactNode> = {
     fire_safety: <AlertTriangle className="h-4 w-4" />,
-    water_quality: <DollarSign className="h-4 w-4" />,
+    water_quality: <Droplets className="h-4 w-4" />,
     structural: <Wrench className="h-4 w-4" />,
     electrical: <Zap className="h-4 w-4" />,
     hygiene: <CheckCircle className="h-4 w-4" />,
@@ -137,6 +139,8 @@ export default function AccommodationDetail() {
       : owner._id === user._id);
 
   // ---------- report stats ----------
+  // "pending" includes reports awaiting review (pending) and AI-verified but not yet human-approved (ai_verified, approved)
+  // "resolved" includes reports that have been fully resolved or human-verified
   const reportStats = {
     total: reports.length,
     pending: reports.filter((r) => r.status === 'pending' || r.status === 'ai_verified' || r.status === 'approved').length,
@@ -190,7 +194,7 @@ export default function AccommodationDetail() {
       setResolveModalOpen(false);
       setSelectedReport(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to resolve report');
+      toast.error(err.message || 'Failed to resolve report');
     } finally {
       setResolving(false);
     }
@@ -238,8 +242,8 @@ export default function AccommodationDetail() {
     accommodation.location?.coordinates &&
     accommodation.location.coordinates[0] !== 0 &&
     accommodation.location.coordinates[1] !== 0;
-  const mapLat = hasLocation ? accommodation.location!.coordinates[1] : 17.385;
-  const mapLng = hasLocation ? accommodation.location!.coordinates[0] : 78.4867;
+  const mapLat = hasLocation ? accommodation.location!.coordinates[1] : DEFAULT_MAP_CENTER[0];
+  const mapLng = hasLocation ? accommodation.location!.coordinates[0] : DEFAULT_MAP_CENTER[1];
 
   // ---------- render ----------
   return (
@@ -350,7 +354,7 @@ export default function AccommodationDetail() {
                         <DollarSign className="h-5 w-5" />
                       </div>
                       <div>
-                        <p className="text-lg font-bold text-slate-900">Rs. {accommodation.monthlyRent.toLocaleString()}</p>
+                        <p className="text-lg font-bold text-slate-900">₹{accommodation.monthlyRent.toLocaleString('en-IN')}</p>
                         <p className="text-xs text-slate-500">Monthly Rent</p>
                       </div>
                     </CardContent>
@@ -408,7 +412,7 @@ export default function AccommodationDetail() {
                                 animate={{ width: `${val}%` }}
                                 transition={{ duration: 0.8, ease: 'easeOut' }}
                                 className={`h-full rounded-full ${
-                                  val >= 80 ? 'bg-emerald-500' : val >= 60 ? 'bg-amber-500' : val >= 40 ? 'bg-orange-500' : 'bg-red-500'
+                                  val >= 70 ? 'bg-emerald-500' : val >= 40 ? 'bg-amber-500' : 'bg-red-500'
                                 }`}
                               />
                             </div>
@@ -748,7 +752,7 @@ export default function AccommodationDetail() {
                   <div className="mt-4 pt-3 border-t border-slate-100">
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-slate-500">This property</span>
-                      <span className={`text-sm font-bold ${ssi >= 80 ? 'text-emerald-600' : ssi >= 60 ? 'text-amber-600' : ssi >= 40 ? 'text-orange-600' : 'text-red-600'}`}>
+                      <span className={`text-sm font-bold ${ssi >= 70 ? 'text-emerald-600' : ssi >= 40 ? 'text-amber-600' : 'text-red-600'}`}>
                         {ssi} / 100
                       </span>
                     </div>

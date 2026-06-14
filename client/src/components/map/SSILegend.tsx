@@ -2,10 +2,9 @@ import { useTranslation } from 'react-i18next';
 export function SSILegend() {
   const { t } = useTranslation();
   const levels = [
-    { color: '#10B981', label: t('map.verySafe'), range: '80-100' },
-    { color: '#F59E0B', label: t('map.moderate'), range: '60-79' },
-    { color: '#F97316', label: t('map.caution'), range: '40-59' },
-    { color: '#EF4444', label: t('map.highRisk'), range: '0-39' },
+    { color: '#22c55e', label: t('map.filterSafe', 'Safe'), range: '70-100' },
+    { color: '#f59e0b', label: t('map.filterModerate', 'Moderate'), range: '40-69' },
+    { color: '#ef4444', label: t('map.filterRisky', 'Risky'), range: '0-39' },
   ];
   return (
     <div className="absolute bottom-6 right-6 z-[1000] rounded-xl bg-white/95 backdrop-blur shadow-lg border border-slate-200 p-4">

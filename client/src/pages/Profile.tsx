@@ -97,6 +97,8 @@ function Toast({
 
   return (
     <div
+      role="alert"
+      aria-live="assertive"
       className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium shadow-lg transition-all ${
         type === 'success'
           ? 'bg-emerald-600 text-white'
@@ -322,7 +324,7 @@ const Profile: React.FC = () => {
             </p>
             <Button
               onClick={() => navigate('/login')}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary-600 hover:bg-primary-700"
             >
               Go to Login
             </Button>

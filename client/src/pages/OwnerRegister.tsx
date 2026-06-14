@@ -4,9 +4,10 @@ import { motion } from 'framer-motion';
 import { Shield, CheckCircle, Building2, Users, Star } from 'lucide-react';
 import { OwnerRegisterForm } from '@/components/auth/OwnerRegisterForm';
 import { useAuthStore } from '@/stores/authStore';
+import { API_URL } from '@/lib/constants';
 import type { OwnerRegisterFormData } from '@/lib/validations';
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const API = API_URL;
 
 export function OwnerRegister() {
   const navigate = useNavigate();
@@ -52,8 +53,8 @@ export function OwnerRegister() {
 
       // Store token and user
       if (result.data?.token) {
-        localStorage.setItem('token', result.data.token);
-        localStorage.setItem('user', JSON.stringify(result.data.user));
+        useAuthStore.getState().setToken(result.data.token);
+        useAuthStore.getState().setUser(result.data.user);
       }
 
       setSubmitted(true);
@@ -127,7 +128,7 @@ export function OwnerRegister() {
 
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <h1 className="text-2xl font-bold text-slate-900 text-center mb-1">Register Your Property</h1>
-            <p className="text-sm text-slate-500 text-center mb-6">Join the platform trusted by 10,000+ students</p>
+            <p className="text-sm text-slate-500 text-center mb-6">Join the growing platform for student safety</p>
 
             <OwnerRegisterForm onSubmit={handleSubmit} error={localError || error} />
 

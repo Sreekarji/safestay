@@ -2,6 +2,9 @@ import { Globe } from 'lucide-react';
 import { useLanguageStore } from '@/stores/languageStore';
 import { DropdownMenu, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
+// Currently supports English, Telugu, and Hindi.
+// To add more languages, append to this array and create the corresponding
+// i18n translation file under src/locales/<code>.json.
 const languages = [
   { code: 'en' as const, name: 'English', flag: '🇺🇸' },
   { code: 'te' as const, name: 'తెలుగు', flag: '🇮🇳' },

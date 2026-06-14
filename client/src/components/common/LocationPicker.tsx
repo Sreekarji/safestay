@@ -2,12 +2,16 @@ import { useState, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { DEFAULT_MAP_CENTER } from '@/lib/constants';
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
+import markerIcon from 'leaflet/dist/images/marker-icon.png';
+import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 
 // Fix default marker icon in bundlers
-const markerIcon = new L.Icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-  iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+const defaultMarkerIcon = new L.Icon({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
@@ -34,7 +38,7 @@ function ClickHandler({ onLocationSelect }: { onLocationSelect: (lat: number, ln
 export function LocationPicker({
   value,
   onChange,
-  center = [17.385, 78.4867],
+  center = DEFAULT_MAP_CENTER,
   zoom = 12,
   className = '',
 }: LocationPickerProps) {
@@ -64,7 +68,7 @@ export function LocationPicker({
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           <ClickHandler onLocationSelect={handleLocationSelect} />
-          {markerPosition && <Marker position={markerPosition} icon={markerIcon} />}
+          {markerPosition && <Marker position={markerPosition} icon={defaultMarkerIcon} />}
         </MapContainer>
       </div>
       <p className="text-xs text-slate-400 mt-2">

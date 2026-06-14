@@ -92,6 +92,7 @@ function AutocompleteDropdown({
 }
 
 export default function RoutePlanner({ accommodationId, collegeId, onAccommodationChange, onCollegeChange, loading }: Props) {
+  // TODO: Fetch accommodation and college options from API instead of using seed data
   const accOptions = SEED_MARKERS.map((m) => ({ id: m.id, name: m.name, area: m.area, ssi: m.ssi }));
   const colOptions = SEED_COLLEGES.map((c) => ({ id: c.id, name: c.name, area: c.area }));
 

@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useTranslation } from 'react-i18next';
-import { Mail, Lock, User, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Mail, Lock, User, Eye, EyeOff, Loader2, Phone } from 'lucide-react';
 import { studentRegisterSchema, type StudentRegisterFormData } from '@/lib/validations';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -48,6 +49,15 @@ export function RegisterForm({ onSubmit, error }: Props) {
       </div>
 
       <div>
+        <label className="block text-sm font-medium text-slate-700 mb-1.5">Phone Number</label>
+        <div className="relative">
+          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <Input type="tel" placeholder="Enter your phone number" className="pl-10" {...register('phone')} />
+        </div>
+        {errors.phone && <p className="mt-1 text-xs text-red-500">{errors.phone.message}</p>}
+      </div>
+
+      <div>
         <label className="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
         <div className="relative">
           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -81,9 +91,9 @@ export function RegisterForm({ onSubmit, error }: Props) {
         <input type="checkbox" className="rounded border-slate-300 mt-0.5" {...register('terms')} />
         <span className="text-sm text-slate-600">
           I agree to the{' '}
-          <span className="text-primary-600 font-medium cursor-pointer">Terms of Service</span>
+          <Link to="/terms" className="text-primary-600 font-medium hover:underline">Terms of Service</Link>
           {' '}and{' '}
-          <span className="text-primary-600 font-medium cursor-pointer">Privacy Policy</span>
+          <Link to="/privacy" className="text-primary-600 font-medium hover:underline">Privacy Policy</Link>
         </span>
       </label>
 

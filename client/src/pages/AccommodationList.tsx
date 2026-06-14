@@ -30,35 +30,35 @@ type ViewMode = 'grid' | 'list';
 
 const safetyFilters: { value: SafetyFilter; label: string; icon: React.ReactNode }[] = [
   { value: 'all', label: 'All', icon: <Shield className="h-3.5 w-3.5" /> },
-  { value: 'safe', label: 'Safe (80+)', icon: <CheckCircle className="h-3.5 w-3.5" /> },
-  { value: 'caution', label: 'Caution (50-79)', icon: <AlertCircle className="h-3.5 w-3.5" /> },
-  { value: 'avoid', label: 'Avoid (<50)', icon: <XCircle className="h-3.5 w-3.5" /> },
+  { value: 'safe', label: 'Safe (70+)', icon: <CheckCircle className="h-3.5 w-3.5" /> },
+  { value: 'caution', label: 'Moderate (40-69)', icon: <AlertCircle className="h-3.5 w-3.5" /> },
+  { value: 'avoid', label: 'Risky (<40)', icon: <XCircle className="h-3.5 w-3.5" /> },
 ];
 
 function matchesSafetyFilter(ssi: number, filter: SafetyFilter): boolean {
   switch (filter) {
-    case 'safe': return ssi >= 80;
-    case 'caution': return ssi >= 50 && ssi < 80;
-    case 'avoid': return ssi < 50;
+    case 'safe': return ssi >= 70;
+    case 'caution': return ssi >= 40 && ssi < 70;
+    case 'avoid': return ssi < 40;
     default: return true;
   }
 }
 
 function getScoreBadge(ssi: number) {
-  if (ssi >= 80) return { bg: 'bg-emerald-100 text-emerald-700', label: 'Safe' };
-  if (ssi >= 50) return { bg: 'bg-amber-100 text-amber-700', label: 'Caution' };
-  return { bg: 'bg-red-100 text-red-700', label: 'Avoid' };
+  if (ssi >= 70) return { bg: 'bg-emerald-100 text-emerald-700', label: 'Safe' };
+  if (ssi >= 40) return { bg: 'bg-amber-100 text-amber-700', label: 'Moderate' };
+  return { bg: 'bg-red-100 text-red-700', label: 'Risky' };
 }
 
 function getScoreBorderColor(ssi: number) {
-  if (ssi >= 80) return 'border-emerald-200';
-  if (ssi >= 50) return 'border-amber-200';
+  if (ssi >= 70) return 'border-emerald-200';
+  if (ssi >= 40) return 'border-amber-200';
   return 'border-red-200';
 }
 
 function getScoreBarColor(ssi: number) {
-  if (ssi >= 80) return 'bg-emerald-500';
-  if (ssi >= 50) return 'bg-amber-500';
+  if (ssi >= 70) return 'bg-emerald-500';
+  if (ssi >= 40) return 'bg-amber-500';
   return 'bg-red-500';
 }
 
@@ -128,9 +128,9 @@ export function AccommodationList() {
 
   const stats = useMemo(() => {
     const total = filtered.length;
-    const safe = filtered.filter((a) => a.ssi >= 80).length;
-    const caution = filtered.filter((a) => a.ssi >= 50 && a.ssi < 80).length;
-    const avoid = filtered.filter((a) => a.ssi < 50).length;
+    const safe = filtered.filter((a) => a.ssi >= 70).length;
+    const caution = filtered.filter((a) => a.ssi >= 40 && a.ssi < 70).length;
+    const avoid = filtered.filter((a) => a.ssi < 40).length;
     return { total, safe, caution, avoid };
   }, [filtered]);
 
@@ -211,9 +211,10 @@ export function AccommodationList() {
               />
               {search && (
                 <button
-                  onClick={() => setSearch('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
+                   onClick={() => setSearch('')}
+                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    aria-label="Clear search"
+                 >
                   <XCircle className="h-4 w-4" />
                 </button>
               )}
@@ -223,9 +224,10 @@ export function AccommodationList() {
               {/* Safety Filter Pills */}
               {safetyFilters.map((f) => (
                 <button
-                  key={f.value}
-                  onClick={() => setSafetyFilter(f.value)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
+                   key={f.value}
+                   onClick={() => setSafetyFilter(f.value)}
+                    aria-pressed={safetyFilter === f.value}
+                   className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-medium transition-all ${
                     safetyFilter === f.value
                       ? 'bg-primary-600 text-white shadow-sm'
                       : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
@@ -241,8 +243,9 @@ export function AccommodationList() {
               {/* View Mode Toggle */}
               <div className="flex rounded-lg border border-slate-200 overflow-hidden">
                 <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 transition-colors ${
+                   onClick={() => setViewMode('grid')}
+                    aria-pressed={viewMode === 'grid'}
+                   className={`p-2 transition-colors ${
                     viewMode === 'grid' ? 'bg-primary-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
                   }`}
                   title="Grid view"
@@ -250,8 +253,9 @@ export function AccommodationList() {
                   <Grid className="h-4 w-4" />
                 </button>
                 <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 transition-colors ${
+                   onClick={() => setViewMode('list')}
+                    aria-pressed={viewMode === 'list'}
+                   className={`p-2 transition-colors ${
                     viewMode === 'list' ? 'bg-primary-600 text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
                   }`}
                   title="List view"
@@ -262,8 +266,9 @@ export function AccommodationList() {
 
               {/* Map Toggle */}
               <button
-                onClick={() => setShowMap(!showMap)}
-                className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                 onClick={() => setShowMap(!showMap)}
+                  aria-pressed={showMap}
+                 className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
                   showMap
                     ? 'border-primary-300 bg-primary-50 text-primary-700'
                     : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
@@ -279,12 +284,12 @@ export function AccommodationList() {
 
       {/* Map View */}
       {showMap && (
-        <FadeIn>
+        <FadeIn className="transition-all duration-300">
           <div className="mx-auto max-w-7xl px-6 pt-6">
             <div className="h-[400px] rounded-xl overflow-hidden border border-slate-200 shadow-sm">
               <SafetyMap
                 mode="timeline"
-                selectedMonth=""
+                selectedMonth={new Date().toISOString().slice(0, 7)}
                 selectedMarker={null}
                 onMarkerSelect={() => {}}
                 filter="all"
@@ -293,6 +298,7 @@ export function AccommodationList() {
                 selectedHotspotId={null}
                 routeComparisonMode={false}
                 comparisonAccId={null}
+                flyToAreaMarkers={[]}
               />
             </div>
           </div>

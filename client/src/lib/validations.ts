@@ -11,6 +11,7 @@ export const studentRegisterSchema = z.object({
     (e) => /\.(edu|ac\.in|ac\.uk|edu\.\w+)$/i.test(e),
     'Please use a valid university email address (e.g. name@university.edu)'
   ),
+  phone: z.string().min(10, 'Phone must be at least 10 digits').max(15),
   password: z.string()
     .min(8, 'Password must be at least 8 characters')
     .regex(/\d/, 'Password must contain at least one number')

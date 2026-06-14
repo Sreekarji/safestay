@@ -10,7 +10,19 @@
     "ownerDashboard": "Owner Dashboard",
     "addProperty": "Add Property",
     "adminDashboard": "Admin Dashboard",
-    "accommodations": "Accommodations"
+    "accommodations": "Accommodations",
+    "safetyMap": "Safety Map",
+    "submitReport": "Submit Report"
+  },
+  "footer": {
+    "product": "Product",
+    "resources": "Resources",
+    "contact": "Contact",
+    "about": "About Us",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service",
+    "rights": "All rights reserved.",
+    "copyright": "© {{year}} SafeStay. All rights reserved."
   },
   "auth": {
     "login": "Login",
@@ -47,7 +59,12 @@
     "enterPhone": "Enter 10-digit phone number",
     "enterPassword": "Enter your password",
     "createStrongPassword": "Min 8 chars with number & special character",
-    "phoneHint": "10-digit Indian mobile number"
+    "phoneHint": "10-digit Indian mobile number",
+    "createYourAccount": "Create Your Account",
+    "registerSubtitle": "Join as a student to report and track safety issues",
+    "propertyOwnerPrompt": "Are you a property owner?",
+    "registerAsOwner": "Register as Owner",
+    "registrationFailed": "Registration failed"
   },
   "report": {
     "title": "Report Title",
@@ -93,10 +110,21 @@
   "dashboard": {
     "title": "Dashboard",
     "greeting": "Good morning, {{name}} 👋",
+    "goodMorning": "Good morning",
+    "goodAfternoon": "Good afternoon",
+    "goodEvening": "Good evening",
     "totalReports": "Total Reports",
     "pending": "Pending",
+    "pendingReview": "Pending Review",
     "verified": "Verified",
     "resolved": "Resolved",
+    "upvotesReceived": "Upvotes Received",
+    "reportNewIssue": "Report New Issue",
+    "reportNewIssueDesc": "Submit a safety concern",
+    "viewSafetyMap": "View Safety Map",
+    "viewSafetyMapDesc": "Explore area safety scores",
+    "myReportsAction": "My Reports",
+    "myReportsActionDesc": "Track your submissions",
     "recentReports": "Recent Reports",
     "reportsOverTime": "Reports Over Time",
     "categoryBreakdown": "Category Breakdown",
@@ -119,7 +147,15 @@
     "reports": "Reports",
     "area": "Area",
     "accommodations": "Accommodations",
-    "searchArea": "Search area..."
+    "searchArea": "Search area...",
+    "searchPlaceholder": "Search location, hostel name, or area...",
+    "filterLabel": "Filter:",
+    "filterAll": "All",
+    "filterSafe": "Safe (70+)",
+    "filterModerate": "Moderate (40-69)",
+    "filterRisky": "Risky (<40)",
+    "locationCount": "{{count}} locations",
+    "noLocationsFound": "No locations found for \"{{query}}\""
   },
   "ai": {
     "analysis": "AI Analysis",
@@ -164,6 +200,7 @@
     "features": "Features",
     "cta": "Ready to make accommodations safer?",
     "ctaButton": "Join thousands of students",
+    "step": "Step",
     "step1Title": "Report an Issue",
     "step1Desc": "Submit safety concerns about your accommodation with photos and details",
     "step2Title": "AI Verifies",
@@ -190,5 +227,26 @@
     "resources": "Resources",
     "contact": "Contact",
     "copyright": "© 2025 SafeStay. All rights reserved."
+  },
+  "error": {
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedError": "An unexpected error occurred. Please try again.",
+    "tryAgain": "Try Again"
+  },
+  "analytics": {
+    "loading": "Loading analytics...",
+    "title": "Analytics Dashboard",
+    "totalProperties": "Total Properties",
+    "totalReports": "Total Reports",
+    "averageSSI": "Average SSI",
+    "highRiskCount": "High Risk Count",
+    "avgRouteSSI": "Avg Route SSI",
+    "safestRoute": "Safest Route",
+    "highestRiskZone": "Highest Risk Zone",
+    "activeAlerts": "Active Alerts",
+    "ssiTrend": "SSI Trend (30 days)",
+    "areaRiskComparison": "Area Risk Comparison",
+    "categoryBreakdown": "Category Breakdown",
+    "recentReports": "Recent Reports"
   }
 }

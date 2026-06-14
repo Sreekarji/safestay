@@ -1,20 +1,22 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'framer-motion';
-import { Brain, CheckCircle2, AlertTriangle, XCircle, Volume2, ChevronDown, ChevronUp } from 'lucide-react';
+import { Brain, CheckCircle2, AlertTriangle, XCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { AIVerdict as AIVerdictType } from '@/types';
 interface Props { verdicts: AIVerdictType[]; }
-const icons: any = { authentic: CheckCircle2, suspicious: AlertTriangle, fake: XCircle };
-const colors: any = { authentic: 'text-emerald-600 bg-emerald-50 border-emerald-200', suspicious: 'text-amber-600 bg-amber-50 border-amber-200', fake: 'text-red-600 bg-red-50 border-red-200' };
+import type { LucideIcon } from 'lucide-react';
+const icons: Record<string, LucideIcon> = { authentic: CheckCircle2, suspicious: AlertTriangle, fake: XCircle };
+const colors: Record<string, string> = { authentic: 'text-emerald-600 bg-emerald-50 border-emerald-200', suspicious: 'text-amber-600 bg-amber-50 border-amber-200', fake: 'text-red-600 bg-red-50 border-red-200' };
 export function AIVerdict({ verdicts }: Props) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
-  const consensus: any = {};
+  if (verdicts.length === 0) return null;
+  const consensus: Record<string, number> = {};
   verdicts.forEach((v) => { consensus[v.verdict] = (consensus[v.verdict] || 0) + 1; });
-  const top = Object.entries(consensus).sort((a: any, b: any) => b[1] - a[1])[0]?.[0] || 'authentic';
+  const top = Object.entries(consensus).sort((a, b) => b[1] - a[1])[0]?.[0] || 'authentic';
   const avg = Math.round(verdicts.reduce((s, v) => s + v.confidence, 0) / verdicts.length);
   return (
     <Card className="border-primary-100">
@@ -35,7 +37,7 @@ export function AIVerdict({ verdicts }: Props) {
           <div className="relative h-3 rounded-full bg-slate-200 overflow-hidden"><div className="absolute left-0 top-0 h-full rounded-full bg-primary-600" style={{ width: `${avg}%` }} /></div>
           <p className="text-xs text-slate-500 mt-1">{avg}% overall confidence</p>
         </div>
-        <Button variant="outline" size="sm" className="mb-4"><Volume2 className="h-4 w-4 mr-2" />{t('ai.listen')}</Button>
+        {/* Listen button placeholder — audio playback not yet implemented */}
         <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 text-sm text-primary-600 font-medium">
           {expanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}{expanded ? t('ai.showLess') : t('ai.showMore')}
         </button>

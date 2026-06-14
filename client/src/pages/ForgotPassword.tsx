@@ -256,7 +256,7 @@ export default function ForgotPassword() {
                   <span className="hidden sm:inline">{s.label}</span>
                 </div>
                 {i < steps.length - 1 && (
-                  <div className="w-6 h-px bg-slate-200 mx-1" />
+                  <div className="w-8 h-0.5 bg-slate-200 mx-1" />
                 )}
               </div>
             ))}

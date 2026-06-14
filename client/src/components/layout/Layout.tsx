@@ -8,15 +8,15 @@ const publicPaths = ['/', '/login', '/register', '/verify-otp', '/forgot-passwor
 export function Layout() {
   const location = useLocation();
   const { isAuthenticated } = useAuthStore();
-  const isPublic = publicPaths.includes(location.pathname);
+  const isPublic = publicPaths.some((p) => p === '/' ? location.pathname === '/' : location.pathname.startsWith(p));
 
   return (
-    <div className="min-h-screen bg-surface font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 font-sans">
       <Navbar />
       <main className="pt-16">
         <Outlet />
       </main>
-      {isPublic && <Footer />}
+      <Footer />
     </div>
   );
 }

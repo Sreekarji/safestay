@@ -59,7 +59,7 @@ export function ImageGallery({ images, className }: ImageGalleryProps) {
           >
             <img
               src={url}
-              alt={`Image ${i + 1}`}
+              alt={`Photo ${i + 1}`}
               className="h-full w-full object-cover transition-transform group-hover:scale-105"
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors" />
@@ -95,7 +95,7 @@ export function ImageGallery({ images, className }: ImageGalleryProps) {
             {/* Image */}
             <img
               src={images[activeIndex]}
-              alt={`Image ${activeIndex + 1}`}
+              alt={`Photo ${activeIndex + 1}`}
               className="max-h-[80vh] max-w-full object-contain p-4"
             />
 

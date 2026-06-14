@@ -59,19 +59,6 @@ export default function TimelineSlider({ selectedMonth, onChange }: Props) {
           })}
         </div>
       </div>
-
-      <style>{`
-        .slider-thumb::-webkit-slider-thumb {
-          -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
-          background: #3b82f6; border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-          cursor: pointer; transition: transform 0.15s ease;
-        }
-        .slider-thumb::-webkit-slider-thumb:hover { transform: scale(1.2); }
-        .slider-thumb::-moz-range-thumb {
-          width: 18px; height: 18px; border-radius: 50%; background: #3b82f6;
-          border: 3px solid white; box-shadow: 0 2px 6px rgba(0,0,0,0.3); cursor: pointer;
-        }
-      `}</style>
     </div>
   );
 }

@@ -81,7 +81,7 @@ export default function SafetyTimelinePanel({ marker, selectedMonth, aiSummary, 
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
             <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 9 }} axisLine={false} tickLine={false} interval={2} />
             <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 9 }} axisLine={false} tickLine={false} />
-            <Tooltip contentStyle={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, color: '#1e293b' }}
+            <Tooltip contentStyle={{ background: 'var(--tooltip-bg, #fff)', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 11, color: '#1e293b' }}
               formatter={(value: number) => [`SSI: ${value}`, 'Score']} />
             <Line type="monotone" dataKey="score" stroke="#3b82f6" strokeWidth={2} dot={false}
               activeDot={{ r: 5, fill: '#3b82f6', stroke: 'white', strokeWidth: 2 }} />
