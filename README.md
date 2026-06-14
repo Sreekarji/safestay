@@ -579,8 +579,10 @@ npm run dev
 
 ## Team
 
-- **Sreekar** — Full Stack + AI Integration
-- **Praneeth Mukkala** — Backend + Database
+- **Sreekar** ([@Sreekarji](https://github.com/Sreekarji)) — Project Lead, Backend & Infrastructure (MongoDB, API design, SSI computation, deployment, DevOps)
+- **Pranay** ([@GanjiPranay](https://github.com/GanjiPranay)) — Frontend Lead (React + TypeScript, landing page, auth flows, dashboard, reports, owner verification, i18n, end-to-end QA)
+- **Snigdha** — Maps & Dashboard Lead (Leaflet/OpenStreetMap integration, 47-feature map system, safety route intelligence, timeline slider, marker styling, map-dashboard sync)
+- **Praneeth** ([@Mukkala-Praneeth](https://github.com/Mukkala-Praneeth)) — AI & Backend Integration (Mistral + Groq + Gemini AI pipeline, Sarvam AI multilingual, shared types, middleware, analytics API)
 
 ---
 
